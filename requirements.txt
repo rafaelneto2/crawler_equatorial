@@ -1,0 +1,6 @@
+httpx
+selenium
+fastapi
+pydantic
+pypdf
+uvicorn[standard]

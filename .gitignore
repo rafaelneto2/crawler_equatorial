@@ -1,0 +1,15 @@
+# Ignorar pastas do ambiente Python
+__pycache__/
+venv/
+env/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignorar pastas do ambiente PyCharm
+.idea/
+*.iml
+*.iws
+*.ipr
+*.iws
+*.log
