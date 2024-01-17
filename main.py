@@ -52,12 +52,12 @@ def get_infos():
 
     for idx, item in enumerate(text.split('\n')):
         if 'Tipo de fornecimento' in item:
-            resp.tipo_fornecimento = item.split('Classificação')[0].split(' ')[-1]
+            resp.tipo_fornecimento = item.split('Classificação')[0].strip().split(' ')[-1]
 
         if 'R$***' in item:
             values = item.split(' ')
             total_a_pagar = values[0].replace('*', '').split('R$')
-            resp.total_a_pagar = 'R$ ' + total_a_pagar[1]
+            resp.total_a_pagar = total_a_pagar[1]
             resp.vencimento = item.split(' ')[1][:10]
 
         if 'CRÉDITO RECEBIDO KWH' in item:
@@ -75,11 +75,17 @@ def get_infos():
 
         if 'ENERGIA INJETADA' in item:
             values = item.split(' ')
+
+            if len(values) > 6:
+                valor_energia_injetada = values[6]
+            else:
+                valor_energia_injetada = values[5]
+
             base_energia_injetada = BaseEnergia(
                 unidade=values[2],
                 preco_unit_com_tributos=values[3],
                 quantidade=values[4],
-                valor=values[5]
+                valor=valor_energia_injetada
             )
             resp.qtd_energia_injetada = base_energia_injetada
 
