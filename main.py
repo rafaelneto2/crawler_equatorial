@@ -120,7 +120,7 @@ def download_boleto(req):
         driver.close()
         raise HTTPException(status_code=500, detail='Não foi possível realizar o login\nErro: ' + str(e))
 
-    if len(req.documento) < 12 or req.data_nascimento is not None:
+    if len(req.documento) < 12:
         try:
             time.sleep(3)
             driver.find_element(by=By.ID, value='WEBDOOR_headercorporativogo_txtData').send_keys(req.data_nascimento)
