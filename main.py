@@ -36,8 +36,17 @@ async def validation_exception_handler(request, exc):
 
 @app.post('/', response_model=ResponseSchema)
 def get_info(req: RequestSchema):
+    # Check if the directory already exists
+    if not os.path.exists('temp'):
+        # Create the directory
+        os.makedirs('temp')
+        print("Directory created successfully!")
+    else:
+        print("Directory already exists!")
+
     for file in [f for f in listdir('temp') if isfile(join('temp', f))]:
         os.remove(f'temp/{file}')
+
     download_boleto(req)
     resp = get_infos()
     return resp
