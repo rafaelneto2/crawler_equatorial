@@ -36,8 +36,16 @@ async def validation_exception_handler(request, exc):
 
 @app.post('/', response_model=ResponseSchema)
 def get_info(req: RequestSchema):
-    for file in [f for f in listdir('temp') if isfile(join('temp', f))]:
-        os.remove(f'temp/{file}')
+    # Check if the directory already exists
+    if not os.path.exists('./temp'):
+        # Create the directory
+        os.makedirs('./temp')
+        print("Directory created successfully!")
+    else:
+        print("Directory already exists!")
+
+    for file in [f for f in listdir('./temp') if isfile(join('./temp', f))]:
+        os.remove(f'./temp/{file}')
     download_boleto(req)
     resp = get_infos()
     return resp
@@ -118,7 +126,7 @@ def download_boleto(req):
         time.sleep(5)
     except Exception as e:
         driver.close()
-        raise HTTPException(status_code=500, detail='Não foi possível realizar o login\nErro: ' + str(e))
+        raise HTTPException(status_code=500, detail='Não foi possível realizar o login.')
 
     if len(req.documento) < 12:
         try:
@@ -128,7 +136,7 @@ def download_boleto(req):
             time.sleep(3)
         except Exception as e:
             driver.close()
-            raise HTTPException(status_code=500, detail='Não foi possível inserir a data\nErro: ' + str(e))
+            raise HTTPException(status_code=500, detail='Não foi possível inserir a data.')
 
     try:
         driver.get('https://equatorialgoias.com.br/AgenciaGO/Servi%C3%A7os/aberto/SegundaVia.aspx')
@@ -138,7 +146,7 @@ def download_boleto(req):
         time.sleep(3)
     except Exception as e:
         driver.close()
-        raise HTTPException(status_code=500, detail='Não foi possível emitir o boleto\nErro: ' + str(e))
+        raise HTTPException(status_code=500, detail='Não foi possível emitir o boleto.')
 
     try:
         driver.find_element(by=By.XPATH, value='//*[@id="ContentPage"]/div[3]/div/table/thead/tr[2]/td[2]/a').click()
@@ -146,10 +154,10 @@ def download_boleto(req):
         time.sleep(3)
     except Exception as e:
         driver.close()
-        raise HTTPException(status_code=500, detail='Não foi possível baixar o boleto\nErro: ' + str(e))
+        raise HTTPException(status_code=500, detail='Não foi possível baixar o boleto.')
 
     driver.close()
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host='0.0.0.0', port=8000, reload=True, log_level="info")
+    uvicorn.run("main:app", host='0.0.0.0', port=8000)
