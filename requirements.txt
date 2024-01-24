@@ -4,3 +4,4 @@ fastapi
 pydantic
 pypdf
 uvicorn[standard]
+webdriver-manager
