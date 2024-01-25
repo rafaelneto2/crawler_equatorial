@@ -111,19 +111,23 @@ def get_infos():
 def download_boleto(req):
     absolute_path = os.path.abspath("main.py").replace("main.py", "temp")
     op = webdriver.ChromeOptions()
+    user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.50 Safari/537.36'
     op.add_experimental_option("prefs", {
         "download.default_directory": absolute_path,
         "download.prompt_for_download": False,
         "download.directory_upgrade": True,
         "safebrowsing.enabled": True
     })
+    op.add_argument(f'user-agent={user_agent}')
+    op.add_argument("--headless")
     op.add_argument("--disable-gpu")
     op.add_argument("--no-sandbox")
-    op.add_argument("enable-automation")
     op.add_argument("--disable-infobars")
     op.add_argument("--disable-dev-shm-usage")
     driver = webdriver.Chrome(options=op)
     driver.get('https://equatorialgoias.com.br/LoginGO.aspx')
+
+    time.sleep(5)
 
     try:
         driver.find_element(by=By.ID, value='WEBDOOR_headercorporativogo_txtUC').send_keys(req.uc)
