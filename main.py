@@ -53,7 +53,7 @@ def get_info(req: RequestSchema):
 
 
 def get_infos():
-    file_name = f'temp/{[f for f in listdir('temp') if isfile(join('temp', f))][0]}'
+    file_name = f'temp/{[f for f in listdir("temp") if isfile(join("temp", f))][0]}'
 
     pdf = open(file_name, 'rb')
     reader = PdfReader(pdf)
