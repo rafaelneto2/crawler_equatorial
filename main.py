@@ -11,6 +11,7 @@ from pypdf import PdfReader
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
 
 from schema import RequestSchema, ResponseSchema, BaseEnergia
 
@@ -118,7 +119,7 @@ def download_boleto(req):
         "download.directory_upgrade": True,
         "safebrowsing.enabled": True
     })
-    driver = webdriver.Chrome(service=Service(executable_path='./chromedriver'), options=op)
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=op)
     driver.get('https://equatorialgoias.com.br/LoginGO.aspx')
 
     try:
