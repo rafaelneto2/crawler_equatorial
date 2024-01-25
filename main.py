@@ -117,6 +117,12 @@ def download_boleto(req):
         "download.directory_upgrade": True,
         "safebrowsing.enabled": True
     })
+    op.add_argument("--headless")
+    op.add_argument("--disable-gpu")
+    op.add_argument("--no-sandbox")
+    op.add_argument("enable-automation")
+    op.add_argument("--disable-infobars")
+    op.add_argument("--disable-dev-shm-usage")
     driver = webdriver.Chrome(options=op)
     driver.get('https://equatorialgoias.com.br/LoginGO.aspx')
 
