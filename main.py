@@ -9,9 +9,7 @@ from fastapi.exceptions import RequestValidationError, ResponseValidationError
 from fastapi.responses import JSONResponse
 from pypdf import PdfReader
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.common.by import By
-from webdriver_manager.chrome import ChromeDriverManager
 
 from schema import RequestSchema, ResponseSchema, BaseEnergia
 
@@ -119,8 +117,7 @@ def download_boleto(req):
         "download.directory_upgrade": True,
         "safebrowsing.enabled": True
     })
-    driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager(driver_version="114.0.5735.90").install()),
-                              options=op)
+    driver = webdriver.Chrome(options=op)
     driver.get('https://equatorialgoias.com.br/LoginGO.aspx')
 
     try:
