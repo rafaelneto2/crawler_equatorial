@@ -119,7 +119,8 @@ def download_boleto(req):
         "download.directory_upgrade": True,
         "safebrowsing.enabled": True
     })
-    driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager(driver_version="2.26").install()), options=op)
+    driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager(driver_version="114.0.5735.90").install()),
+                              options=op)
     driver.get('https://equatorialgoias.com.br/LoginGO.aspx')
 
     try:
