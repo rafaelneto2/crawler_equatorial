@@ -111,7 +111,7 @@ def get_infos():
 def download_boleto(req):
     absolute_path = os.path.abspath("main.py").replace("main.py", "temp")
     op = webdriver.ChromeOptions()
-    user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.50 Safari/537.36'
+    user_agent = 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.5735.90 Mobile Safari/537.36'
     op.add_experimental_option("prefs", {
         "download.default_directory": absolute_path,
         "download.prompt_for_download": False,
