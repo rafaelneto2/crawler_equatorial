@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 from os import listdir
@@ -136,6 +137,7 @@ def download_boleto(req):
         time.sleep(5)
     except Exception as e:
         driver.close()
+        logging.error(str(e))
         raise HTTPException(status_code=500, detail='Não foi possível realizar o login')
 
     if len(req.documento) < 12:
@@ -146,6 +148,7 @@ def download_boleto(req):
             time.sleep(3)
         except Exception as e:
             driver.close()
+            logging.error(str(e))
             raise HTTPException(status_code=500, detail='Não foi possível inserir a data')
 
     try:
@@ -156,6 +159,7 @@ def download_boleto(req):
         time.sleep(3)
     except Exception as e:
         driver.close()
+        logging.error(str(e))
         raise HTTPException(status_code=500, detail='Não foi possível emitir o boleto')
 
     try:
@@ -164,6 +168,7 @@ def download_boleto(req):
         time.sleep(3)
     except Exception as e:
         driver.close()
+        logging.error(str(e))
         raise HTTPException(status_code=500, detail='Não foi possível baixar o boleto')
 
     driver.close()
