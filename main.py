@@ -120,7 +120,7 @@ def download_boleto(req):
         "safebrowsing.enabled": True
     })
     op.add_argument(f'user-agent={user_agent}')
-    op.add_argument("--headless")
+    op.add_argument("--headless=new")
     op.add_argument("--disable-gpu")
     op.add_argument("--no-sandbox")
     op.add_argument("--disable-infobars")
