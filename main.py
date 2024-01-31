@@ -138,7 +138,11 @@ def download_boleto(req):
     except Exception as e:
         driver.close()
         logging.error(str(e))
-        raise HTTPException(status_code=500, detail='Não foi possível realizar o login')
+        if hasattr(e, 'alert_text'):
+            msg = f'Erro ao realizar o login. {e.alert_text}'
+        else:
+            msg = 'Erro ao realizar o login.'
+        raise HTTPException(status_code=500, detail=msg)
 
     if len(req.documento) < 12:
         try:
@@ -149,7 +153,11 @@ def download_boleto(req):
         except Exception as e:
             driver.close()
             logging.error(str(e))
-            raise HTTPException(status_code=500, detail='Não foi possível inserir a data')
+            if hasattr(e, 'alert_text'):
+                msg = f'Erro ao inserir a data de nascimento. {e.alert_text}'
+            else:
+                msg = 'Erro ao inserir a data de nascimento.'
+            raise HTTPException(status_code=500, detail=msg)
 
     try:
         driver.get('https://equatorialgoias.com.br/AgenciaGO/Servi%C3%A7os/aberto/SegundaVia.aspx')
@@ -160,7 +168,11 @@ def download_boleto(req):
     except Exception as e:
         driver.close()
         logging.error(str(e))
-        raise HTTPException(status_code=500, detail='Não foi possível emitir o boleto')
+        if hasattr(e, 'alert_text'):
+            msg = f'Erro ao emitir o boleto. {e.alert_text}'
+        else:
+            msg = 'Erro ao emitir o boleto.'
+        raise HTTPException(status_code=500, detail=msg)
 
     try:
         driver.find_element(by=By.XPATH, value='//*[@id="ContentPage"]/div[3]/div/table/thead/tr[2]/td[2]/a').click()
@@ -169,7 +181,11 @@ def download_boleto(req):
     except Exception as e:
         driver.close()
         logging.error(str(e))
-        raise HTTPException(status_code=500, detail='Não há boleto disponível para download.')
+        if hasattr(e, 'alert_text'):
+            msg = f'Não há boleto disponível para download. {e.alert_text}'
+        else:
+            msg = 'Não há boleto disponível para download.'
+        raise HTTPException(status_code=500, detail=msg)
 
     driver.close()
 
