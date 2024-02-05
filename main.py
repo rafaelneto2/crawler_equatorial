@@ -9,8 +9,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError, ResponseValidationError
 from fastapi.responses import JSONResponse
 from pypdf import PdfReader
-from selenium import webdriver
 from selenium.webdriver.common.by import By
+from seleniumwire import webdriver
 
 from schema import RequestSchema, ResponseSchema, BaseEnergia
 
@@ -111,6 +111,16 @@ def get_infos():
 
 def download_boleto(req):
     absolute_path = os.path.abspath("main.py").replace("main.py", "temp")
+    username = "visue0pvcyoj3du-country-br-state-goias"
+    password = "f2r2ukhy7sg8ofs"
+    proxy = "rp.proxyscrape.com:6060"
+    seleniumwire_options = {
+        'proxy': {
+            'http': f'http://{username}:{password}@{proxy}',
+            'verify_ssl': False,
+        },
+    }
+
     op = webdriver.ChromeOptions()
     user_agent = 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.5735.90 Mobile Safari/537.36'
     op.add_experimental_option("prefs", {
@@ -120,12 +130,13 @@ def download_boleto(req):
         "safebrowsing.enabled": True
     })
     op.add_argument(f'user-agent={user_agent}')
-    op.add_argument("--headless=new")
+    # op.add_argument(f'--proxy-server={proxy}')
+    # op.add_argument("--headless=new")
     op.add_argument("--disable-gpu")
     op.add_argument("--no-sandbox")
     op.add_argument("--disable-infobars")
     op.add_argument("--disable-dev-shm-usage")
-    driver = webdriver.Chrome(options=op)
+    driver = webdriver.Chrome(seleniumwire_options=seleniumwire_options, options=op)
     driver.get('https://equatorialgoias.com.br/LoginGO.aspx')
 
     time.sleep(5)

@@ -6,3 +6,4 @@ pypdf
 uvicorn[standard]
 webdriver-manager
 chromedriver_binary
+selenium-wire
