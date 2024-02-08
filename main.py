@@ -54,55 +54,61 @@ def get_info(req: RequestSchema):
 
 
 def get_infos():
-    file_name = f'temp/{[f for f in listdir("temp") if isfile(join("temp", f))][0]}'
+    try:
+        file_name = f'temp/{[f for f in listdir("temp") if isfile(join("temp", f))][0]}'
 
-    pdf = open(file_name, 'rb')
-    reader = PdfReader(pdf)
-    text = reader.pages[0].extract_text()
+        pdf = open(file_name, 'rb')
+        reader = PdfReader(pdf)
+        text = reader.pages[0].extract_text()
 
-    resp = ResponseSchema
+        resp = ResponseSchema
 
-    for idx, item in enumerate(text.split('\n')):
-        if 'Tipo de fornecimento' in item:
-            resp.tipo_fornecimento = item.split('Classificação')[0].strip().split(' ')[-1]
+        for idx, item in enumerate(text.split('\n')):
+            if 'Tipo de fornecimento' in item:
+                resp.tipo_fornecimento = item.split('Classificação')[0].strip().split(' ')[-1]
 
-        if 'R$***' in item:
-            values = item.split(' ')
-            total_a_pagar = values[0].replace('*', '').split('R$')
-            resp.total_a_pagar = total_a_pagar[1]
-            resp.vencimento = item.split(' ')[1][:10]
+            if 'R$***' in item:
+                values = item.split(' ')
+                total_a_pagar = values[0].replace('*', '').split('R$')
+                resp.total_a_pagar = total_a_pagar[1]
+                resp.vencimento = item.split(' ')[1][:10]
 
-        if 'CRÉDITO RECEBIDO KWH' in item:
-            resp.credito_recebido = item.split('CRÉDITO RECEBIDO KWH: ')[1].split(' ')[0][0:-1]
+            if 'CRÉDITO RECEBIDO KWH' in item:
+                resp.credito_recebido = item.split('CRÉDITO RECEBIDO KWH: ATV=')[1].split(' ')[0][0:-1]
+                resp.saldo = item.split('SALDO KWH: ATV=')[1].split(' ')[0][0:-1]
 
-        if 'ENERGIA ATIVA FORNECIDA' in item:
-            values = item.split(' ')
-            base_energia_ativa = BaseEnergia(
-                unidade=values[3],
-                preco_unit_com_tributos=values[4],
-                quantidade=values[5],
-                valor=values[7]
-            )
-            resp.qtd_energia_ativa_fornecida = base_energia_ativa
+            if 'ENERGIA ATIVA FORNECIDA' in item:
+                values = item.split(' ')
+                base_energia_ativa = BaseEnergia(
+                    unidade=values[3],
+                    preco_unit_com_tributos=values[4],
+                    quantidade=values[5],
+                    valor=values[7]
+                )
+                resp.qtd_energia_ativa_fornecida = base_energia_ativa
 
-        if 'ENERGIA INJETADA' in item:
-            values = item.split(' ')
+            if 'ENERGIA INJETADA' in item:
+                values = item.split(' ')
 
-            if len(values) > 6:
-                valor_energia_injetada = values[6]
-            else:
-                valor_energia_injetada = values[5]
+                if len(values) > 6:
+                    valor_energia_injetada = values[6]
+                else:
+                    valor_energia_injetada = values[5]
 
-            base_energia_injetada = BaseEnergia(
-                unidade=values[2],
-                preco_unit_com_tributos=values[3],
-                quantidade=values[4],
-                valor=valor_energia_injetada
-            )
-            resp.qtd_energia_injetada = base_energia_injetada
+                base_energia_injetada = BaseEnergia(
+                    unidade=values[2],
+                    preco_unit_com_tributos=values[3],
+                    quantidade=values[4],
+                    valor=valor_energia_injetada
+                )
+                resp.qtd_energia_injetada = base_energia_injetada
 
-        if 'CONSUMO FATURADO(kWh) MÊS/ANO' in item:
-            resp.media = text.split('\n')[idx + 1]
+            if 'CONSUMO FATURADO(kWh) MÊS/ANO' in item:
+                resp.media = text.split('\n')[idx + 1]
+
+    except Exception as e:
+        logging.error(str(e))
+        raise HTTPException(status_code=500, detail='Erro ao recuperar informações do boleto.')
 
     pdf.close()
     os.remove(file_name)
@@ -139,18 +145,18 @@ def download_boleto(req):
     driver = webdriver.Chrome(seleniumwire_options=seleniumwire_options, options=op)
     driver.get('https://equatorialgoias.com.br/LoginGO.aspx')
 
-    time.sleep(5)
+    time.sleep(3)
 
     try:
         driver.find_element(by=By.ID, value='WEBDOOR_headercorporativogo_txtUC').send_keys(req.uc)
         driver.find_element(by=By.ID, value='WEBDOOR_headercorporativogo_txtDocumento').send_keys(req.documento)
         driver.find_element(by=By.XPATH, value='//*[@id="WEBDOOR_headercorporativogo_divLogin"]/div[2]/button').click()
-        time.sleep(5)
+        time.sleep(3)
     except Exception as e:
         driver.close()
         logging.error(str(e))
         if hasattr(e, 'alert_text'):
-            msg = f'Erro ao realizar o login. {e.alert_text}'
+            msg = e.alert_text
         else:
             msg = 'Erro ao realizar o login.'
         raise HTTPException(status_code=500, detail=msg)
@@ -165,9 +171,9 @@ def download_boleto(req):
             driver.close()
             logging.error(str(e))
             if hasattr(e, 'alert_text'):
-                msg = f'Erro ao inserir a data de nascimento. {e.alert_text}'
+                msg = e.alert_text
             else:
-                msg = 'Erro ao inserir a data de nascimento.'
+                msg = 'Erro inesperado ao inserir a data, por favor tente novamente.'
             raise HTTPException(status_code=500, detail=msg)
 
     try:
@@ -180,9 +186,9 @@ def download_boleto(req):
         driver.close()
         logging.error(str(e))
         if hasattr(e, 'alert_text'):
-            msg = f'Erro ao emitir o boleto. {e.alert_text}'
+            msg = e.alert_text
         else:
-            msg = 'Erro ao emitir o boleto.'
+            msg = 'Erro inesperado ao emitir o boleto, por favor tente novamente.'
         raise HTTPException(status_code=500, detail=msg)
 
     try:
@@ -193,7 +199,7 @@ def download_boleto(req):
         driver.close()
         logging.error(str(e))
         if hasattr(e, 'alert_text'):
-            msg = f'Não há boleto disponível para download. {e.alert_text}'
+            msg = {e.alert_text}
         else:
             msg = 'Não há boleto disponível para download.'
         raise HTTPException(status_code=500, detail=msg)

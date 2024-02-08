@@ -19,6 +19,7 @@ class ResponseSchema(BaseModel):
     vencimento: str
     total_a_pagar: str
     credito_recebido: str
+    saldo: str
     qtd_energia_ativa_fornecida: BaseEnergia
     qtd_energia_injetada: BaseEnergia
     media: str
