@@ -117,8 +117,8 @@ def get_infos():
 
 def download_boleto(req):
     absolute_path = os.path.abspath("main.py").replace("main.py", "temp")
-    username = "visue0pvcyoj3du-country-br-state-goias"
-    password = "f2r2ukhy7sg8ofs"
+    username = "hy1zz0azv0regqx-country-br-state-goias"
+    password = "fulcfr23i0jjhn8"
     proxy = "rp.proxyscrape.com:6060"
     seleniumwire_options = {
         'proxy': {
@@ -202,7 +202,7 @@ def download_boleto(req):
             msg = {e.alert_text}
         else:
             msg = 'Não há boleto disponível para download.'
-        raise HTTPException(status_code=500, detail=msg)
+        raise HTTPException(status_code=503, detail=msg)
 
     driver.close()
 
