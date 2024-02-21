@@ -16,6 +16,7 @@ class BaseEnergia(BaseModel):
 
 class ResponseSchema(BaseModel):
     tipo_fornecimento: str
+    conta_mes: str
     vencimento: str
     total_a_pagar: str
     credito_recebido: str

@@ -37,82 +37,96 @@ async def validation_exception_handler(request, exc):
 
 @app.post('/', response_model=ResponseSchema)
 def get_info(req: RequestSchema):
-    # Check if the directory already exists
-    if not os.path.exists('temp'):
-        # Create the directory
-        os.makedirs('temp')
-        print("Directory created successfully!")
-    else:
-        print("Directory already exists!")
+    verify_path_and_files()
+    download_boleto(req)
+    resp = get_infos()
+    return resp[0]
 
-    for file in [f for f in listdir('temp') if isfile(join('temp', f))]:
-        os.remove(f'temp/{file}')
 
+@app.post('/v2', response_model=list[ResponseSchema])
+def get_info(req: RequestSchema):
+    verify_path_and_files()
     download_boleto(req)
     resp = get_infos()
     return resp
 
 
 def get_infos():
+    global qtd_energia_injetada, qtd_energia_ativa_fornecida, tipo_fornecimento, conta_mes, vencimento, total_a_pagar, credito_recebido, saldo, media
     try:
-        file_name = f'temp/{[f for f in listdir("temp") if isfile(join("temp", f))][0]}'
+        response = []
+        for file in [f for f in listdir("temp") if isfile(join("temp", f))]:
 
-        pdf = open(file_name, 'rb')
-        reader = PdfReader(pdf)
-        text = reader.pages[0].extract_text()
+            file_name = f'temp/{file}'
 
-        resp = ResponseSchema
+            pdf = open(file_name, 'rb')
+            reader = PdfReader(pdf)
+            text = reader.pages[0].extract_text()
 
-        for idx, item in enumerate(text.split('\n')):
-            if 'Tipo de fornecimento' in item:
-                resp.tipo_fornecimento = item.split('Classificação')[0].strip().split(' ')[-1]
+            for idx, item in enumerate(text.split('\n')):
+                if 'Tipo de fornecimento' in item:
+                    tipo_fornecimento = item.split('Classificação')[0].strip().split(' ')[-1]
 
-            if 'R$***' in item:
-                values = item.split(' ')
-                total_a_pagar = values[0].replace('*', '').split('R$')
-                resp.total_a_pagar = total_a_pagar[1]
-                resp.vencimento = item.split(' ')[1][:10]
+                if 'R$***' in item:
+                    values = item.split(' ')
+                    total_a_pagar = values[0].replace('*', '').split('R$')
+                    total_a_pagar = total_a_pagar[1]
+                    vencimento = item.split(' ')[1][:10]
+                    conta_mes = text.split('\n')[idx + 1][0:8]
 
-            if 'CRÉDITO RECEBIDO KWH' in item:
-                resp.credito_recebido = item.split('CRÉDITO RECEBIDO KWH: ATV=')[1].split(' ')[0][0:-1]
-                resp.saldo = item.split('SALDO KWH: ATV=')[1].split(' ')[0][0:-1]
+                if 'CRÉDITO RECEBIDO KWH' in item:
+                    credito_recebido = item.split('CRÉDITO RECEBIDO KWH: ATV=')[1].split(' ')[0][0:-1]
+                    saldo = item.split('SALDO KWH: ATV=')[1].split(' ')[0][0:-1]
 
-            if 'ENERGIA ATIVA FORNECIDA' in item:
-                values = item.split(' ')
-                base_energia_ativa = BaseEnergia(
-                    unidade=values[3],
-                    preco_unit_com_tributos=values[4],
-                    quantidade=values[5],
-                    valor=values[7]
-                )
-                resp.qtd_energia_ativa_fornecida = base_energia_ativa
+                if 'ENERGIA ATIVA FORNECIDA' in item:
+                    values = item.split(' ')
+                    base_energia_ativa = BaseEnergia(
+                        unidade=values[3],
+                        preco_unit_com_tributos=values[4],
+                        quantidade=values[5],
+                        valor=values[7]
+                    )
+                    qtd_energia_ativa_fornecida = base_energia_ativa
 
-            if 'ENERGIA INJETADA' in item:
-                values = item.split(' ')
+                if 'ENERGIA INJETADA' in item:
+                    values = item.split(' ')
 
-                if len(values) > 6:
-                    valor_energia_injetada = values[6]
-                else:
-                    valor_energia_injetada = values[5]
+                    if len(values) > 6:
+                        valor_energia_injetada = values[6]
+                    else:
+                        valor_energia_injetada = values[5]
 
-                base_energia_injetada = BaseEnergia(
-                    unidade=values[2],
-                    preco_unit_com_tributos=values[3],
-                    quantidade=values[4],
-                    valor=valor_energia_injetada
-                )
-                resp.qtd_energia_injetada = base_energia_injetada
+                    base_energia_injetada = BaseEnergia(
+                        unidade=values[2],
+                        preco_unit_com_tributos=values[3],
+                        quantidade=values[4],
+                        valor=valor_energia_injetada
+                    )
+                    qtd_energia_injetada = base_energia_injetada
 
-            if 'CONSUMO FATURADO(kWh) MÊS/ANO' in item:
-                resp.media = text.split('\n')[idx + 1]
+                if 'CONSUMO FATURADO(kWh) MÊS/ANO' in item:
+                    media = text.split('\n')[idx + 1]
+
+            boleto_info = ResponseSchema(
+                tipo_fornecimento=tipo_fornecimento,
+                conta_mes=conta_mes,
+                vencimento=vencimento,
+                total_a_pagar=total_a_pagar,
+                credito_recebido=credito_recebido,
+                saldo=saldo,
+                qtd_energia_ativa_fornecida=qtd_energia_ativa_fornecida,
+                qtd_energia_injetada=qtd_energia_injetada,
+                media=media
+            )
+            response.append(boleto_info)
+            pdf.close()
+            os.remove(file_name)
 
     except Exception as e:
         logging.error(str(e))
         raise HTTPException(status_code=500, detail='Erro ao recuperar informações do boleto.')
 
-    pdf.close()
-    os.remove(file_name)
-    return resp
+    return response
 
 
 def download_boleto(req):
@@ -137,7 +151,7 @@ def download_boleto(req):
     })
     op.add_argument(f'user-agent={user_agent}')
     # op.add_argument(f'--proxy-server={proxy}')
-    op.add_argument("--headless=new")
+    # op.add_argument("--headless=new")
     op.add_argument("--disable-gpu")
     op.add_argument("--no-sandbox")
     op.add_argument("--disable-infobars")
@@ -176,6 +190,44 @@ def download_boleto(req):
                 msg = 'Erro inesperado ao inserir a data, por favor tente novamente.'
             raise HTTPException(status_code=500, detail=msg)
 
+    select_options(driver)
+
+    try:
+        boletos = driver.find_elements(by=By.XPATH, value='//*[@id="ContentPage"]/div[3]/div/table/thead/tr/td[2]/a')
+        if len(boletos) > 1:
+            for i in range(len(boletos)):
+                if i == 0:
+                    boletos[0].click()
+                    driver.find_element(by=By.ID, value='CONTENT_btnModal').click()
+                    time.sleep(3)
+                else:
+                    select_options(driver)
+                    novos_boletos = driver.find_elements(by=By.XPATH,
+                                                         value='//*[@id="ContentPage"]/div[3]/div/table/thead/tr/td[2]/a')
+                    novos_boletos[i].click()
+                    driver.find_element(by=By.ID, value='CONTENT_btnModal').click()
+                    time.sleep(3)
+        elif len(boletos) == 1:
+            boletos[0].click()
+            driver.find_element(by=By.ID, value='CONTENT_btnModal').click()
+            time.sleep(3)
+        else:
+            msg = 'Não há boleto disponível para download.'
+            raise HTTPException(status_code=503, detail=msg)
+
+    except Exception as e:
+        driver.close()
+        logging.error(str(e))
+        if hasattr(e, 'alert_text'):
+            msg = {e.alert_text}
+        else:
+            msg = 'Não há boleto disponível para download.'
+        raise HTTPException(status_code=503, detail=msg)
+
+    driver.close()
+
+
+def select_options(driver):
     try:
         driver.get('https://equatorialgoias.com.br/AgenciaGO/Servi%C3%A7os/aberto/SegundaVia.aspx')
         driver.find_element(by=By.XPATH, value='//*[@id="CONTENT_cbTipoEmissao"]/option[2]').click()
@@ -191,20 +243,16 @@ def download_boleto(req):
             msg = 'Erro inesperado ao emitir o boleto, por favor tente novamente.'
         raise HTTPException(status_code=500, detail=msg)
 
-    try:
-        driver.find_element(by=By.XPATH, value='//*[@id="ContentPage"]/div[3]/div/table/thead/tr[2]/td[2]/a').click()
-        driver.find_element(by=By.ID, value='CONTENT_btnModal').click()
-        time.sleep(3)
-    except Exception as e:
-        driver.close()
-        logging.error(str(e))
-        if hasattr(e, 'alert_text'):
-            msg = {e.alert_text}
-        else:
-            msg = 'Não há boleto disponível para download.'
-        raise HTTPException(status_code=503, detail=msg)
 
-    driver.close()
+def verify_path_and_files():
+    if not os.path.exists('temp'):
+        # Create the directory
+        os.makedirs('temp')
+        print("Directory created successfully!")
+    else:
+        print("Directory already exists!")
+    for file in [f for f in listdir('temp') if isfile(join('temp', f))]:
+        os.remove(f'temp/{file}')
 
 
 if __name__ == "__main__":
