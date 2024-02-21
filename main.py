@@ -151,7 +151,7 @@ def download_boleto(req):
     })
     op.add_argument(f'user-agent={user_agent}')
     # op.add_argument(f'--proxy-server={proxy}')
-    # op.add_argument("--headless=new")
+    op.add_argument("--headless=new")
     op.add_argument("--disable-gpu")
     op.add_argument("--no-sandbox")
     op.add_argument("--disable-infobars")
