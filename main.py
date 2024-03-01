@@ -63,16 +63,19 @@ def get_infos():
             reader = PdfReader(pdf)
             text = reader.pages[0].extract_text()
 
+            flag_valor = True
+
             for idx, item in enumerate(text.split('\n')):
                 if 'Tipo de fornecimento' in item:
                     tipo_fornecimento = item.split('Classificação')[0].strip().split(' ')[-1]
 
-                if 'R$***' in item:
+                if 'R$***' in item and flag_valor:
                     values = item.split(' ')
                     total_a_pagar = values[0].replace('*', '').split('R$')
                     total_a_pagar = total_a_pagar[1]
                     vencimento = item.split(' ')[1][:10]
                     conta_mes = text.split('\n')[idx + 1][0:8]
+                    flag_valor = False
 
                 if 'CRÉDITO RECEBIDO KWH' in item:
                     credito_recebido = item.split('CRÉDITO RECEBIDO KWH: ATV=')[1].split(' ')[0][0:-1]
