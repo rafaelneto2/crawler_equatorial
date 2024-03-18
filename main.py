@@ -56,8 +56,8 @@ def get_info(req: RequestSchema):
 
 @app.post('/v2', response_model=list[ResponseSchema])
 def get_info(req: RequestSchema):
-    # verify_path_and_files()
-    # download_boleto(req)
+    verify_path_and_files()
+    download_boleto(req)
     resp = get_infos(req)
     return resp
 
