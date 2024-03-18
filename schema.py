@@ -5,6 +5,7 @@ class RequestSchema(BaseModel):
     uc: str
     documento: str
     data_nascimento: str = None
+    codigo_auxiliar: str
 
 
 class BaseEnergia(BaseModel):
@@ -24,3 +25,4 @@ class ResponseSchema(BaseModel):
     qtd_energia_ativa_fornecida: BaseEnergia
     qtd_energia_injetada: BaseEnergia
     media: str
+    url_fatura: str

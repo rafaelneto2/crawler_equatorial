@@ -8,6 +8,10 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError, ResponseValidationError
 from fastapi.responses import JSONResponse
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+from googleapiclient.http import MediaFileUpload
 from pypdf import PdfReader
 from selenium.webdriver.common.by import By
 from seleniumwire import webdriver
@@ -15,6 +19,13 @@ from seleniumwire import webdriver
 from schema import RequestSchema, ResponseSchema, BaseEnergia
 
 app = FastAPI()
+SCOPES = ['https://www.googleapis.com/auth/drive']
+SERVICE_ACCOUNT_FILE = "equatorial-credentials.json"
+ID_FOLDER_EQUATORIAL = "1TX79sj4OvbZJIDNSZtHbxxIRwuSG074t"
+
+credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+
+drive_service = build('drive', 'v3', credentials=credentials)
 
 
 @app.exception_handler(RequestValidationError)
@@ -45,13 +56,13 @@ def get_info(req: RequestSchema):
 
 @app.post('/v2', response_model=list[ResponseSchema])
 def get_info(req: RequestSchema):
-    verify_path_and_files()
-    download_boleto(req)
-    resp = get_infos()
+    # verify_path_and_files()
+    # download_boleto(req)
+    resp = get_infos(req)
     return resp
 
 
-def get_infos():
+def get_infos(req: RequestSchema):
     global qtd_energia_injetada, qtd_energia_ativa_fornecida, tipo_fornecimento, conta_mes, vencimento, total_a_pagar, credito_recebido, saldo, media
     try:
         response = []
@@ -110,6 +121,8 @@ def get_infos():
                 if 'CONSUMO FATURADO(kWh) MÊS/ANO' in item:
                     media = text.split('\n')[idx + 1]
 
+            link_download_file = upload_file(f'{req.codigo_auxiliar}_{req.uc}_{conta_mes}.pdf', file_name, ID_FOLDER_EQUATORIAL)
+
             boleto_info = ResponseSchema(
                 tipo_fornecimento=tipo_fornecimento,
                 conta_mes=conta_mes,
@@ -119,7 +132,8 @@ def get_infos():
                 saldo=saldo,
                 qtd_energia_ativa_fornecida=qtd_energia_ativa_fornecida,
                 qtd_energia_injetada=qtd_energia_injetada,
-                media=media
+                media=media,
+                url_fatura=link_download_file
             )
             response.append(boleto_info)
             pdf.close()
@@ -256,6 +270,31 @@ def verify_path_and_files():
         print("Directory already exists!")
     for file in [f for f in listdir('temp') if isfile(join('temp', f))]:
         os.remove(f'temp/{file}')
+
+
+def upload_file(file_name, file_path, id_folder):
+    url_download_file = 'https://drive.usercontent.google.com/u/0/uc?id={id_file}&export=download'
+    try:
+        file_metadata = {
+            'name': file_name,
+            'parents': [id_folder]
+        }
+
+        media = MediaFileUpload(file_path, mimetype='application/pdf')
+        file = (
+            drive_service.files().create(
+                body=file_metadata,
+                media_body=media,
+                fields='id')
+            .execute()
+        )
+
+        print('Arquivo enviado com sucesso. ID: %s' % file.get('id'))
+
+        return url_download_file.format(id_file=file.get('id'))
+
+    except HttpError as error:
+        print(f"Ocorreu um erro ao fazer upload do arquivo: {error}")
 
 
 if __name__ == "__main__":

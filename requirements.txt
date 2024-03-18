@@ -7,3 +7,5 @@ uvicorn[standard]
 webdriver-manager
 chromedriver_binary
 selenium-wire
+google-api-python-client
+google-auth
