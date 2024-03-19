@@ -151,6 +151,9 @@ def download_boleto(req):
     username = "hy1zz0azv0regqx-country-br-state-goias"
     password = "fulcfr23i0jjhn8"
     proxy = "rp.proxyscrape.com:6060"
+    # username = "sh1al1yp0ekpzwb-country-br"
+    # password = "ee6qa47ecjbtw7r"
+    # proxy = "rp.proxyscrape.com:6060"
     seleniumwire_options = {
         'proxy': {
             'http': f'https://{username}:{password}@{proxy}',
@@ -173,7 +176,8 @@ def download_boleto(req):
     op.add_argument("--no-sandbox")
     op.add_argument("--disable-infobars")
     op.add_argument("--disable-dev-shm-usage")
-    driver = webdriver.Chrome(seleniumwire_options=seleniumwire_options, options=op)
+    # driver = webdriver.Chrome(seleniumwire_options=seleniumwire_options, options=op)
+    driver = webdriver.Chrome(options=op)
     driver.get('https://equatorialgoias.com.br/LoginGO.aspx')
 
     time.sleep(3)
