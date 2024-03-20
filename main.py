@@ -148,7 +148,7 @@ def get_infos(req: RequestSchema):
 
 def download_boleto(req):
     absolute_path = os.path.abspath("main.py").replace("main.py", "temp")
-    username = "hy1zz0azv0regqx-country-br-state-goias"
+    username = "hy1zz0azv0regqx-country-br"
     password = "fulcfr23i0jjhn8"
     proxy = "rp.proxyscrape.com:6060"
     # username = "sh1al1yp0ekpzwb-country-br"
@@ -176,8 +176,8 @@ def download_boleto(req):
     op.add_argument("--no-sandbox")
     op.add_argument("--disable-infobars")
     op.add_argument("--disable-dev-shm-usage")
-    # driver = webdriver.Chrome(seleniumwire_options=seleniumwire_options, options=op)
-    driver = webdriver.Chrome(options=op)
+    driver = webdriver.Chrome(seleniumwire_options=seleniumwire_options, options=op)
+    # driver = webdriver.Chrome(options=op)
     driver.get('https://equatorialgoias.com.br/LoginGO.aspx')
 
     time.sleep(3)
@@ -250,7 +250,9 @@ def download_boleto(req):
 
 def select_options(driver):
     try:
+        time.sleep(3)
         driver.get('https://equatorialgoias.com.br/AgenciaGO/Servi%C3%A7os/aberto/SegundaVia.aspx')
+        time.sleep(3)
         driver.find_element(by=By.XPATH, value='//*[@id="CONTENT_cbTipoEmissao"]/option[2]').click()
         driver.find_element(by=By.XPATH, value='//*[@id="CONTENT_cbMotivo"]/option[7]').click()
         driver.find_element(by=By.ID, value='CONTENT_btEnviar').click()
