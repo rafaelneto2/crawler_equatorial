@@ -50,7 +50,7 @@ async def validation_exception_handler(request, exc):
 def get_info(req: RequestSchema):
     verify_path_and_files()
     download_boleto(req)
-    resp = get_infos()
+    resp = get_infos(req)
     return resp[0]
 
 
@@ -176,8 +176,8 @@ def download_boleto(req):
     op.add_argument("--no-sandbox")
     op.add_argument("--disable-infobars")
     op.add_argument("--disable-dev-shm-usage")
-    driver = webdriver.Chrome(seleniumwire_options=seleniumwire_options, options=op)
-    # driver = webdriver.Chrome(options=op)
+    # driver = webdriver.Chrome(seleniumwire_options=seleniumwire_options, options=op)
+    driver = webdriver.Chrome(options=op)
     driver.get('https://equatorialgoias.com.br/LoginGO.aspx')
 
     time.sleep(3)
@@ -250,7 +250,7 @@ def download_boleto(req):
 
 def select_options(driver):
     try:
-        time.sleep(3)
+        time.sleep(5)
         driver.get('https://equatorialgoias.com.br/AgenciaGO/Servi%C3%A7os/aberto/SegundaVia.aspx')
         time.sleep(3)
         driver.find_element(by=By.XPATH, value='//*[@id="CONTENT_cbTipoEmissao"]/option[2]').click()
@@ -304,4 +304,4 @@ def upload_file(file_name, file_path, id_folder):
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host='127.0.0.1', port=8000)
+    uvicorn.run("main:app", host='0.0.0.0', port=8000)
