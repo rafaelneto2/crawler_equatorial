@@ -1,0 +1,15 @@
+httpx
+selenium
+fastapi
+pydantic
+pypdf
+uvicorn[standard]
+webdriver-manager
+chromedriver_binary
+selenium-wire
+google-api-python-client
+google-auth
+
+azure-servicebus
+azure-identity
+aiohttp
