@@ -1,5 +1,3 @@
-import asyncio
-import json
 import logging
 import os
 import time
@@ -7,12 +5,11 @@ from os import listdir
 from os.path import isfile, join
 
 from azure.servicebus import ServiceBusReceiver
-from selenium.common import NoSuchElementException, WebDriverException
 from selenium.webdriver.common.by import By
 from seleniumwire import webdriver
 
-from app_v2.event.producer import producer, create_result_obj
-from app_v2.squema.schema import RequestSchema
+from app.event.producer import producer, create_result_obj
+from app.squema.schema import RequestSchema
 
 
 def download_boleto(req: RequestSchema, receiver: ServiceBusReceiver, message):

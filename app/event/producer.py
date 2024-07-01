@@ -3,7 +3,7 @@ import os
 from azure.servicebus import ServiceBusClient, ServiceBusMessage
 from dotenv import load_dotenv
 
-from app_v2.squema.schema import ResponseSchema, ErrorDetails
+from app.squema.schema import ResponseSchema, ErrorDetails
 
 CONNECTION_STR = "Endpoint=sb://rc-energy.servicebus.windows.net/;SharedAccessKeyName=ConnectSendAndListen;SharedAccessKey=juNyQCg3mAG8AnemU2PMF1TXWCGJVlRFB+ASbN0eslY="
 QUEUE_NAME_CONSUMER = "customers-to-run"
