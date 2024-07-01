@@ -1,28 +1,22 @@
+import asyncio
+import json
 import logging
 import os
 import time
 from os import listdir
 from os.path import isfile, join
 
-from fastapi import HTTPException
+from azure.servicebus import ServiceBusReceiver
+from selenium.common import NoSuchElementException, WebDriverException
 from selenium.webdriver.common.by import By
 from seleniumwire import webdriver
 
+from app_v2.event.producer import producer, create_result_obj
+from app_v2.squema.schema import RequestSchema
 
-def download_boleto(req):
+
+def download_boleto(req: RequestSchema, receiver: ServiceBusReceiver, message):
     absolute_path = os.path.abspath("main.py").replace("main.py", "temp")
-    username = "hy1zz0azv0regqx-country-br"
-    password = "fulcfr23i0jjhn8"
-    proxy = "rp.proxyscrape.com:6060"
-    # username = "sh1al1yp0ekpzwb-country-br"
-    # password = "ee6qa47ecjbtw7r"
-    # proxy = "rp.proxyscrape.com:6060"
-    seleniumwire_options = {
-        'proxy': {
-            'http': f'https://{username}:{password}@{proxy}',
-            'verify_ssl': False,
-        },
-    }
 
     op = webdriver.ChromeOptions()
     user_agent = 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.5735.90 Mobile Safari/537.36'
@@ -33,16 +27,14 @@ def download_boleto(req):
         "safebrowsing.enabled": True
     })
     op.add_argument(f'user-agent={user_agent}')
-    # op.add_argument(f'--proxy-server={proxy}')
     op.add_argument("--headless=new")
     op.add_argument("--disable-gpu")
     op.add_argument("--no-sandbox")
     op.add_argument("--disable-infobars")
     op.add_argument("--disable-dev-shm-usage")
-    # driver = webdriver.Chrome(seleniumwire_options=seleniumwire_options, options=op)
     driver = webdriver.Chrome(options=op)
-    driver.get('https://equatorialgoias.com.br/LoginGO.aspx')
 
+    driver.get('https://equatorialgoias.com.br/LoginGO.aspx')
     time.sleep(3)
 
     try:
@@ -57,7 +49,8 @@ def download_boleto(req):
             msg = e.alert_text
         else:
             msg = 'Erro ao realizar o login.'
-        raise HTTPException(status_code=500, detail=msg)
+        producer(create_result_obj(req.correlation_id, '101', msg, str(e)))
+        return False
 
     if len(req.documento) < 12:
         try:
@@ -72,9 +65,11 @@ def download_boleto(req):
                 msg = e.alert_text
             else:
                 msg = 'Erro inesperado ao inserir a data, por favor tente novamente.'
-            raise HTTPException(status_code=500, detail=msg)
+            producer(create_result_obj(req.correlation_id, '102', msg, str(e)))
+            return False
 
-    select_options(driver)
+    if select_options(driver, req) is False:
+        return False
 
     try:
         boletos = driver.find_elements(by=By.XPATH, value='//*[@id="ContentPage"]/div[3]/div/table/thead/tr/td[2]/a')
@@ -82,22 +77,27 @@ def download_boleto(req):
             for i in range(len(boletos)):
                 if i == 0:
                     boletos[0].click()
+                    time.sleep(3)
                     driver.find_element(by=By.ID, value='CONTENT_btnModal').click()
                     time.sleep(3)
                 else:
-                    select_options(driver)
+                    select_options(driver, req)
                     novos_boletos = driver.find_elements(by=By.XPATH,
                                                          value='//*[@id="ContentPage"]/div[3]/div/table/thead/tr/td[2]/a')
                     novos_boletos[i].click()
+                    time.sleep(3)
                     driver.find_element(by=By.ID, value='CONTENT_btnModal').click()
                     time.sleep(3)
         elif len(boletos) == 1:
             boletos[0].click()
+            time.sleep(3)
             driver.find_element(by=By.ID, value='CONTENT_btnModal').click()
             time.sleep(3)
         else:
             msg = 'Não há boleto disponível para download.'
-            raise HTTPException(status_code=503, detail=msg)
+            producer(create_result_obj(req.correlation_id, '103', msg))
+            receiver.complete_message(message)
+            return False
 
     except Exception as e:
         driver.close()
@@ -105,16 +105,18 @@ def download_boleto(req):
         if hasattr(e, 'alert_text'):
             msg = {e.alert_text}
         else:
-            msg = 'Não há boleto disponível para download.'
-        raise HTTPException(status_code=503, detail=msg)
+            msg = 'Erro fazer download do boleto.'
+        producer(create_result_obj(req.correlation_id, '104', msg, str(e)))
+        return False
 
     driver.close()
+    return True
 
 
-def select_options(driver):
+def select_options(driver, req):
     try:
         time.sleep(5)
-        driver.get('https://equatorialgoias.com.br/AgenciaGO/Servi%C3%A7os/aberto/SegundaVia.aspx')
+        driver.get('https://goias.equatorialenergia.com.br/AgenciaGO/Servi%C3%A7os/aberto/SegundaVia.aspx')
         time.sleep(3)
         driver.find_element(by=By.XPATH, value='//*[@id="CONTENT_cbTipoEmissao"]/option[2]').click()
         driver.find_element(by=By.XPATH, value='//*[@id="CONTENT_cbMotivo"]/option[7]').click()
@@ -126,17 +128,16 @@ def select_options(driver):
         if hasattr(e, 'alert_text'):
             msg = e.alert_text
         else:
-            msg = 'Erro inesperado ao emitir o boleto, por favor tente novamente.'
-        raise HTTPException(status_code=500, detail=msg)
+            msg = 'Erro inesperado ao emitir fatura.'
+        producer(create_result_obj(req.correlation_id, '105', msg, str(e)))
+        return False
 
 
 def verify_path_and_files():
     if not os.path.exists('temp'):
-        # Create the directory
         os.makedirs('temp')
         print("Directory created successfully!")
     else:
         print("Directory already exists!")
     for file in [f for f in listdir('temp') if isfile(join('temp', f))]:
         os.remove(f'temp/{file}')
-

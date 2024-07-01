@@ -1,60 +1,52 @@
 import asyncio
-import time
 import json
+import os
+import time
 
-from azure.servicebus.aio import ServiceBusClient
-from azure.servicebus import ServiceBusMessage
-from azure.identity.aio import DefaultAzureCredential
+from azure.servicebus import ServiceBusClient
+from dotenv import load_dotenv
 
-from squema.schema import RequestSchema, ResponseSchema
-from useCase.scrapyUseCase import download_boleto, verify_path_and_files
-
+from squema.schema import RequestSchema
 from useCase.fileUseCase import get_infos
+from useCase.scrapyUseCase import download_boleto, verify_path_and_files
+from event.producer import producer, create_result_obj
 
-CONNECTION_STR = "Endpoint=sb://rc-energy.servicebus.windows.net/;SharedAccessKeyName=ConnectSendAndListen;SharedAccessKey=juNyQCg3mAG8AnemU2PMF1TXWCGJVlRFB+ASbN0eslY="
-QUEUE_NAME_CONSUMER = "customers-to-run"
-# QUEUE_NAME_PRODUCER = "run-results"
-QUEUE_NAME_PRODUCER = "customers-to-run"
+load_dotenv()
 
-credential = DefaultAzureCredential()
-
-
-async def send_single_message(sender, msg):
-    message = ServiceBusMessage(msg)
-    await sender.send_messages(message)
-    print("Sent a single message")
+conn_str = os.getenv('CONNECTION_STR')
+queue_consumer = os.getenv('QUEUE_NAME_CONSUMER')
+queue_producer = os.getenv('QUEUE_NAME_PRODUCER')
 
 
-async def producer():
-    async with ServiceBusClient.from_connection_string(
-            conn_str=CONNECTION_STR,
+def main():
+    with ServiceBusClient.from_connection_string(
+            conn_str=conn_str,
             logging_enable=True) as servicebus_client:
 
-        sender = servicebus_client.get_queue_sender(queue_name=QUEUE_NAME_PRODUCER)
-        async with sender:
-            await send_single_message(sender, 'Mensagem Teste!')
+        receiver = servicebus_client.get_queue_receiver(queue_name=queue_consumer, max_wait_time=5)
 
-
-async def main():
-    async with ServiceBusClient.from_connection_string(
-            conn_str=CONNECTION_STR,
-            logging_enable=True) as servicebus_client:
-
-        receiver = servicebus_client.get_queue_receiver(queue_name=QUEUE_NAME_CONSUMER, max_wait_time=5)
-        sender = servicebus_client.get_queue_sender(queue_name=QUEUE_NAME_PRODUCER)
-
-        async with receiver, sender:
-            async for msg in receiver:
+        with receiver:
+            for msg in receiver:
                 print("Mensagem recebida: " + str(msg))
+                # receiver.complete_message(msg)
+
+                try:
+                    req = RequestSchema.parse_raw(str(msg))
+                except Exception as e:
+                    producer(create_result_obj(
+                        None,
+                        '107',
+                        'Erro ao traduzir mensagem.',
+                        str(e))
+                    )
+                    continue
+
                 verify_path_and_files()
-                req = RequestSchema.parse_raw(str(msg))
-                download_boleto(req)
-                resp = get_infos(req)
-                await send_single_message(sender, json.dumps(resp))
-                await receiver.complete_message(msg)
+                if download_boleto(req, receiver, msg) and get_infos(req):
+                # if get_infos(req):
+                    receiver.complete_message(msg)
 
 
 while True:
-    # asyncio.run(producer())
     time.sleep(1)
-    asyncio.run(main())
+    main()

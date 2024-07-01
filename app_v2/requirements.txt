@@ -13,3 +13,5 @@ google-auth
 azure-servicebus
 azure-identity
 aiohttp
+python-dotenv
+blinker

@@ -2,6 +2,7 @@ from pydantic import BaseModel
 
 
 class RequestSchema(BaseModel):
+    correlation_id: str
     uc: str
     documento: str
     data_nascimento: str = None
@@ -9,20 +10,33 @@ class RequestSchema(BaseModel):
 
 
 class BaseEnergia(BaseModel):
-    unidade: str
-    quantidade: str
-    preco_unit_com_tributos: str
-    valor: str
+    unidade: str | None
+    quantidade: str | None
+    preco_unit_com_tributos: str | None
+    valor: str | None
 
 
-class ResponseSchema(BaseModel):
+class ErrorDetails(BaseModel):
+    code: str
+    message: str | None
+    detail: str | None
+
+
+class Dados(BaseModel):
     tipo_fornecimento: str
     conta_mes: str
     vencimento: str
     total_a_pagar: str
-    credito_recebido: str
-    saldo: str
-    qtd_energia_ativa_fornecida: BaseEnergia
-    qtd_energia_injetada: BaseEnergia
-    media: str
-    url_fatura: str
+    credito_recebido: str | None
+    saldo: str | None
+    qtd_energia_ativa_fornecida: BaseEnergia | None
+    qtd_energia_injetada: list[BaseEnergia] | None
+    media: str | None
+    url_fatura: str | None
+
+
+class ResponseSchema(BaseModel):
+    correlation_id: str | None
+    success: bool
+    error: ErrorDetails | None
+    data: Dados | None

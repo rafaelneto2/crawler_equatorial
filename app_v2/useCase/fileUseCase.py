@@ -3,14 +3,14 @@ import os
 from os import listdir
 from os.path import isfile, join
 
-from fastapi import HTTPException
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
 from pypdf import PdfReader
 
-from app_v2.squema.schema import RequestSchema, ResponseSchema, BaseEnergia
+from app_v2.event.producer import producer, create_result_obj
+from app_v2.squema.schema import RequestSchema, ResponseSchema, BaseEnergia, Dados
 
 SCOPES = ['https://www.googleapis.com/auth/drive']
 SERVICE_ACCOUNT_FILE = "equatorial-credentials.json"
@@ -22,10 +22,17 @@ drive_service = build('drive', 'v3', credentials=credentials)
 
 
 def get_infos(req: RequestSchema):
-    global qtd_energia_injetada, qtd_energia_ativa_fornecida, tipo_fornecimento, conta_mes, vencimento, total_a_pagar, credito_recebido, saldo, media
     try:
-        response = []
         for file in [f for f in listdir("temp") if isfile(join("temp", f))]:
+            qtd_energia_injetada = []
+            qtd_energia_ativa_fornecida = None
+            tipo_fornecimento = None
+            conta_mes = None
+            vencimento = None
+            total_a_pagar = None
+            credito_recebido = None
+            saldo = None
+            media = None
 
             file_name = f'temp/{file}'
 
@@ -34,6 +41,7 @@ def get_infos(req: RequestSchema):
             text = reader.pages[0].extract_text()
 
             flag_valor = True
+            flag_energia_ativa = True
 
             for idx, item in enumerate(text.split('\n')):
                 if 'Tipo de fornecimento' in item:
@@ -48,41 +56,62 @@ def get_infos(req: RequestSchema):
                     flag_valor = False
 
                 if 'CRÉDITO RECEBIDO KWH' in item:
-                    credito_recebido = item.split('CRÉDITO RECEBIDO KWH: ATV=')[1].split(' ')[0][0:-1]
-                    saldo = item.split('SALDO KWH: ATV=')[1].split(' ')[0][0:-1]
+                    try:
+                        credito_recebido = item.split('CRÉDITO RECEBIDO KWH: ATV=')[1].split(' ')[0][0:-1]
+                        saldo = item.split('SALDO KWH: ATV=')[1].split(' ')[0][0:-1]
+                    except:
+                        pass
 
-                if 'ENERGIA ATIVA FORNECIDA' in item:
-                    values = item.split(' ')
-                    base_energia_ativa = BaseEnergia(
-                        unidade=values[3],
-                        preco_unit_com_tributos=values[4],
-                        quantidade=values[5],
-                        valor=values[7]
-                    )
+                if ('ENERGIA ATIVA FORNECIDA' in item or 'CONSUMO' in item) and flag_energia_ativa:
+                    values = item.strip().split(' ')
+                    if values[0] == 'CONSUMO':
+                        base_energia_ativa = BaseEnergia(
+                            unidade=values[1],
+                            preco_unit_com_tributos=values[2],
+                            quantidade=values[3],
+                            valor=values[5]
+                        )
+                    else:
+                        base_energia_ativa = BaseEnergia(
+                            unidade=values[3],
+                            preco_unit_com_tributos=values[4],
+                            quantidade=values[5],
+                            valor=values[7]
+                        )
                     qtd_energia_ativa_fornecida = base_energia_ativa
+                    flag_energia_ativa = False
 
                 if 'ENERGIA INJETADA' in item:
                     values = item.split(' ')
 
-                    if len(values) > 6:
-                        valor_energia_injetada = values[6]
+                    if values[3] == 'UC':
+                        base_energia_injetada = BaseEnergia(
+                            unidade=values[5],
+                            preco_unit_com_tributos=values[6],
+                            quantidade=values[7],
+                            valor=values[9]
+                        )
                     else:
-                        valor_energia_injetada = values[5]
+                        if len(values) > 6:
+                            valor_energia_injetada = values[6]
+                        else:
+                            valor_energia_injetada = values[5]
 
-                    base_energia_injetada = BaseEnergia(
-                        unidade=values[2],
-                        preco_unit_com_tributos=values[3],
-                        quantidade=values[4],
-                        valor=valor_energia_injetada
-                    )
-                    qtd_energia_injetada = base_energia_injetada
+                        base_energia_injetada = BaseEnergia(
+                            unidade=values[2],
+                            preco_unit_com_tributos=values[3],
+                            quantidade=values[4],
+                            valor=valor_energia_injetada
+                        )
+                    qtd_energia_injetada.append(base_energia_injetada)
 
                 if 'CONSUMO FATURADO(kWh) MÊS/ANO' in item:
                     media = text.split('\n')[idx + 1]
 
-            link_download_file = upload_file(f'{req.codigo_auxiliar}_{req.uc}_{conta_mes}.pdf', file_name, ID_FOLDER_EQUATORIAL)
+            link_download_file = upload_file(f'{req.codigo_auxiliar}_{req.uc}_{conta_mes}.pdf', file_name,
+                                             ID_FOLDER_EQUATORIAL)
 
-            boleto_info = ResponseSchema(
+            boleto_info = Dados(
                 tipo_fornecimento=tipo_fornecimento,
                 conta_mes=conta_mes,
                 vencimento=vencimento,
@@ -94,16 +123,29 @@ def get_infos(req: RequestSchema):
                 media=media,
                 url_fatura=link_download_file
             )
-            response.append(boleto_info)
+
+            result = ResponseSchema(
+                correlation_id=req.correlation_id,
+                success=True,
+                error=None,
+                data=boleto_info
+            ).model_dump_json()
+
+            producer(result)
             pdf.close()
             os.remove(file_name)
 
+        return True
+
     except Exception as e:
         logging.error(str(e))
-        raise HTTPException(status_code=500, detail='Erro ao recuperar informações do boleto.')
-
-    return response
-
+        msg = 'Erro ao recuperar informações do boleto.'
+        producer(create_result_obj(
+            req.correlation_id,
+            '106',
+            msg,
+            str(e)))
+        return False
 
 
 def upload_file(file_name, file_path, id_folder):
@@ -129,4 +171,3 @@ def upload_file(file_name, file_path, id_folder):
 
     except HttpError as error:
         print(f"Ocorreu um erro ao fazer upload do arquivo: {error}")
-
