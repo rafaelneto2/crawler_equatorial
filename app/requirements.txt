@@ -14,4 +14,4 @@ azure-servicebus
 azure-identity
 aiohttp
 python-dotenv
-blinker
+blinker==1.7.0

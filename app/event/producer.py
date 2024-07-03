@@ -3,16 +3,11 @@ import os
 from azure.servicebus import ServiceBusClient, ServiceBusMessage
 from dotenv import load_dotenv
 
-from app.squema.schema import ResponseSchema, ErrorDetails
-
-CONNECTION_STR = "Endpoint=sb://rc-energy.servicebus.windows.net/;SharedAccessKeyName=ConnectSendAndListen;SharedAccessKey=juNyQCg3mAG8AnemU2PMF1TXWCGJVlRFB+ASbN0eslY="
-QUEUE_NAME_CONSUMER = "customers-to-run"
-QUEUE_NAME_PRODUCER = "run-results"
+from squema.schema import ResponseSchema, ErrorDetails
 
 load_dotenv()
 
 conn_str = os.getenv('CONNECTION_STR')
-queue_consumer = os.getenv('QUEUE_NAME_CONSUMER')
 queue_producer = os.getenv('QUEUE_NAME_PRODUCER')
 
 
@@ -24,9 +19,9 @@ def send_single_message(sender, msg):
 
 def producer(msg: str):
     with ServiceBusClient.from_connection_string(
-            conn_str=CONNECTION_STR,
+            conn_str=conn_str,
             logging_enable=True) as servicebus_client:
-        sender = servicebus_client.get_queue_sender(queue_name=QUEUE_NAME_PRODUCER)
+        sender = servicebus_client.get_queue_sender(queue_name=queue_producer)
         with sender:
             send_single_message(sender, msg)
 

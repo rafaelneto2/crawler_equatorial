@@ -1,5 +1,9 @@
 FROM python:3.11-slim
 
+ENV CONNECTION_STR Endpoint=sb://rc-energy.servicebus.windows.net/;SharedAccessKeyName=ConnectSendAndListen;SharedAccessKey=juNyQCg3mAG8AnemU2PMF1TXWCGJVlRFB+ASbN0eslY=
+ENV QUEUE_NAME_CONSUMER customers-to-run
+ENV QUEUE_NAME_PRODUCER run-results
+
 WORKDIR /app
 
 RUN apt-get update \
@@ -30,8 +34,9 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-RUN wget -q https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_114.0.5735.90-1_amd64.deb \
-    && apt-get install -y ./google-chrome-stable_114.0.5735.90-1_amd64.deb \
+COPY ./google-chrome-stable_114.0.5735.90-1_amd64.deb .
+
+RUN apt-get install -y ./google-chrome-stable_114.0.5735.90-1_amd64.deb \
     && rm google-chrome-stable_114.0.5735.90-1_amd64.deb
 
 RUN wget -q https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip \
