@@ -8,8 +8,8 @@ from azure.servicebus import ServiceBusReceiver
 from selenium.webdriver.common.by import By
 from seleniumwire import webdriver
 
-from event.producer import producer, create_result_obj
-from squema.schema import RequestSchema
+from app.event.producer import producer, create_result_obj
+from app.squema.schema import RequestSchema
 
 
 def download_boleto(req: RequestSchema, receiver: ServiceBusReceiver, message, return_msg: bool):

@@ -3,7 +3,7 @@ import os
 from azure.servicebus import ServiceBusClient, ServiceBusMessage
 from dotenv import load_dotenv
 
-from squema.schema import ResponseSchema, ErrorDetails
+from app.squema.schema import ResponseSchema, ErrorDetails
 
 load_dotenv()
 

@@ -9,8 +9,8 @@ from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
 from pypdf import PdfReader
 
-from event.producer import producer, create_result_obj
-from squema.schema import RequestSchema, ResponseSchema, BaseEnergia, Dados
+from app.event.producer import producer, create_result_obj
+from app.squema.schema import RequestSchema, ResponseSchema, BaseEnergia, Dados
 
 SCOPES = ['https://www.googleapis.com/auth/drive']
 SERVICE_ACCOUNT_FILE = "equatorial-credentials.json"
