@@ -6,10 +6,10 @@ import time
 from azure.servicebus import ServiceBusClient
 from dotenv import load_dotenv
 
-from app.event.producer import producer, create_result_obj
-from app.squema.schema import RequestSchema
-from app.useCase.fileUseCase import get_infos
-from app.useCase.scrapyUseCase import download_boleto, verify_path_and_files
+from event.producer import producer, create_result_obj
+from squema.schema import RequestSchema
+from useCase.fileUseCase import get_infos
+from useCase.scrapyUseCase import download_boleto, verify_path_and_files
 
 load_dotenv()
 
