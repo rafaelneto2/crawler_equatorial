@@ -1,4 +1,6 @@
+import logging
 import os
+import threading
 import time
 
 from azure.servicebus import ServiceBusClient
@@ -26,7 +28,7 @@ def main():
         with receiver:
             for msg in receiver:
                 print("Mensagem recebida: " + str(msg))
-                # receiver.complete_message(msg)
+                return_msg = True if msg.delivery_count >= 4 else False
 
                 try:
                     req = RequestSchema.parse_raw(str(msg))
@@ -40,11 +42,16 @@ def main():
                     continue
 
                 verify_path_and_files()
-                if download_boleto(req, receiver, msg) and get_infos(req):
-                # if get_infos(req):
+                if download_boleto(req, receiver, msg, return_msg) and get_infos(req, return_msg):
+                # if get_infos(req, return_msg):
                     receiver.complete_message(msg)
 
 
 while True:
     time.sleep(1)
-    main()
+    try:
+        print(f'----- Threads ativas: {threading.active_count()} -----')
+        main()
+    except Exception as e:
+        logging.error(str(e))
+        pass

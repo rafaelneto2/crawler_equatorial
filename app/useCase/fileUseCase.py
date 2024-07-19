@@ -21,7 +21,7 @@ credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCO
 drive_service = build('drive', 'v3', credentials=credentials)
 
 
-def get_infos(req: RequestSchema):
+def get_infos(req: RequestSchema, return_msg: bool):
     try:
         for file in [f for f in listdir("temp") if isfile(join("temp", f))]:
             qtd_energia_injetada = []
@@ -57,8 +57,12 @@ def get_infos(req: RequestSchema):
 
                 if 'CRÉDITO RECEBIDO KWH' in item:
                     try:
-                        credito_recebido = item.split('CRÉDITO RECEBIDO KWH: ATV=')[1].split(' ')[0][0:-1]
-                        saldo = item.split('SALDO KWH: ATV=')[1].split(' ')[0][0:-1]
+                        if 'ATV=' in item:
+                            credito_recebido = item.split('CRÉDITO RECEBIDO KWH: ATV=')[1].split(' ')[0][0:-1]
+                            saldo = item.split('SALDO KWH: ATV=')[1].split(' ')[0][0:-1]
+                        else:
+                            credito_recebido = item.split('CRÉDITO RECEBIDO KWH ')[1].split(' ')[0][0:-1]
+                            saldo = item.split('SALDO KWH: ')[1].split(' ')[0][0:-1]
                     except:
                         pass
 
@@ -140,11 +144,12 @@ def get_infos(req: RequestSchema):
     except Exception as e:
         logging.error(str(e))
         msg = 'Erro ao recuperar informações do boleto.'
-        producer(create_result_obj(
-            req.correlation_id,
-            '106',
-            msg,
-            str(e)))
+        if return_msg:
+            producer(create_result_obj(
+                req.correlation_id,
+                '106',
+                msg,
+                str(e)))
         return False
 
 
