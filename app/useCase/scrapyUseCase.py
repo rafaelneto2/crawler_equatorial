@@ -56,6 +56,7 @@ def download_boleto(req: RequestSchema, receiver: ServiceBusReceiver, message, r
                 'Site indisponível.',
                 str(e))
             )
+            receiver.complete_message(message)
         return False
 
     time.sleep(3)
@@ -74,6 +75,7 @@ def download_boleto(req: RequestSchema, receiver: ServiceBusReceiver, message, r
             msg = 'Erro ao realizar o login.'
         if return_msg:
             producer(create_result_obj(req.correlation_id, '101', msg, str(e)))
+            receiver.complete_message(message)
         return False
 
     if len(req.documento) < 12:
@@ -91,9 +93,10 @@ def download_boleto(req: RequestSchema, receiver: ServiceBusReceiver, message, r
                 msg = 'Erro inesperado ao inserir a data, por favor tente novamente.'
             if return_msg:
                 producer(create_result_obj(req.correlation_id, '102', msg, str(e)))
+                receiver.complete_message(message)
             return False
 
-    if select_options(driver, req, return_msg) is False:
+    if select_options(driver, req, return_msg, receiver, message) is False:
         return False
 
     try:
@@ -106,7 +109,7 @@ def download_boleto(req: RequestSchema, receiver: ServiceBusReceiver, message, r
                     driver.find_element(by=By.ID, value='CONTENT_btnModal').click()
                     time.sleep(3)
                 else:
-                    select_options(driver, req, return_msg)
+                    select_options(driver, req, return_msg, receiver, message)
                     novos_boletos = driver.find_elements(by=By.XPATH,
                                                          value='//*[@id="ContentPage"]/div[3]/div/table/thead/tr/td[2]/a')
                     novos_boletos[i].click()
@@ -133,13 +136,14 @@ def download_boleto(req: RequestSchema, receiver: ServiceBusReceiver, message, r
             msg = 'Erro fazer download do boleto.'
         if return_msg:
             producer(create_result_obj(req.correlation_id, '104', msg, str(e)))
+            receiver.complete_message(message)
         return False
 
     driver.quit()
     return True
 
 
-def select_options(driver, req, return_msg):
+def select_options(driver, req, return_msg, receiver, message):
     try:
         time.sleep(5)
         driver.get('https://goias.equatorialenergia.com.br/AgenciaGO/Servi%C3%A7os/aberto/SegundaVia.aspx')
@@ -157,6 +161,7 @@ def select_options(driver, req, return_msg):
             msg = 'Erro inesperado ao emitir fatura.'
         if return_msg:
             producer(create_result_obj(req.correlation_id, '105', msg, str(e)))
+            receiver.complete_message(message)
         return False
 
 

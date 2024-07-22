@@ -21,7 +21,7 @@ credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCO
 drive_service = build('drive', 'v3', credentials=credentials)
 
 
-def get_infos(req: RequestSchema, return_msg: bool):
+def get_infos(req: RequestSchema, return_msg: bool, receiver, message):
     try:
         for file in [f for f in listdir("temp") if isfile(join("temp", f))]:
             qtd_energia_injetada = []
@@ -150,6 +150,7 @@ def get_infos(req: RequestSchema, return_msg: bool):
                 '106',
                 msg,
                 str(e)))
+            receiver.complete_message(message)
         return False
 
 

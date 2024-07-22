@@ -42,7 +42,7 @@ def main():
                     continue
 
                 verify_path_and_files()
-                if download_boleto(req, receiver, msg, return_msg) and get_infos(req, return_msg):
+                if download_boleto(req, receiver, msg, return_msg) and get_infos(req, return_msg, receiver, msg):
                 # if get_infos(req, return_msg):
                     receiver.complete_message(msg)
 
