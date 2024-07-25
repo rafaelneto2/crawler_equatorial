@@ -8,7 +8,7 @@ from azure.servicebus import ServiceBusReceiver
 from selenium.webdriver.common.by import By
 from seleniumwire import webdriver
 
-from event.producer import producer, create_result_obj
+from event.producer import producer_result, create_result_obj
 from squema.schema import RequestSchema
 
 
@@ -50,7 +50,7 @@ def download_boleto(req: RequestSchema, receiver: ServiceBusReceiver, message, r
     except Exception as e:
         logging.error(str(e))
         if return_msg:
-            producer(create_result_obj(
+            producer_result(create_result_obj(
                 req.correlation_id,
                 '101',
                 'Site indisponível.',
@@ -74,7 +74,7 @@ def download_boleto(req: RequestSchema, receiver: ServiceBusReceiver, message, r
         else:
             msg = 'Erro ao realizar o login.'
         if return_msg:
-            producer(create_result_obj(req.correlation_id, '101', msg, str(e)))
+            producer_result(create_result_obj(req.correlation_id, '101', msg, str(e)))
             receiver.complete_message(message)
         return False
 
@@ -92,7 +92,7 @@ def download_boleto(req: RequestSchema, receiver: ServiceBusReceiver, message, r
             else:
                 msg = 'Erro inesperado ao inserir a data, por favor tente novamente.'
             if return_msg:
-                producer(create_result_obj(req.correlation_id, '102', msg, str(e)))
+                producer_result(create_result_obj(req.correlation_id, '102', msg, str(e)))
                 receiver.complete_message(message)
             return False
 
@@ -123,7 +123,7 @@ def download_boleto(req: RequestSchema, receiver: ServiceBusReceiver, message, r
             time.sleep(3)
         else:
             msg = 'Não há boleto disponível para download.'
-            producer(create_result_obj(req.correlation_id, '103', msg))
+            producer_result(create_result_obj(req.correlation_id, '103', msg))
             receiver.complete_message(message)
             return False
 
@@ -135,7 +135,7 @@ def download_boleto(req: RequestSchema, receiver: ServiceBusReceiver, message, r
         else:
             msg = 'Erro fazer download do boleto.'
         if return_msg:
-            producer(create_result_obj(req.correlation_id, '104', msg, str(e)))
+            producer_result(create_result_obj(req.correlation_id, '104', msg, str(e)))
             receiver.complete_message(message)
         return False
 
@@ -160,7 +160,7 @@ def select_options(driver, req, return_msg, receiver, message):
         else:
             msg = 'Erro inesperado ao emitir fatura.'
         if return_msg:
-            producer(create_result_obj(req.correlation_id, '105', msg, str(e)))
+            producer_result(create_result_obj(req.correlation_id, '105', msg, str(e)))
             receiver.complete_message(message)
         return False
 

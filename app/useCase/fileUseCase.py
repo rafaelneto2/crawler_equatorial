@@ -3,22 +3,10 @@ import os
 from os import listdir
 from os.path import isfile, join
 
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
-from googleapiclient.http import MediaFileUpload
 from pypdf import PdfReader
 
-from event.producer import producer, create_result_obj
+from event.producer import producer_result, create_result_obj
 from squema.schema import RequestSchema, ResponseSchema, BaseEnergia, Dados
-
-SCOPES = ['https://www.googleapis.com/auth/drive']
-SERVICE_ACCOUNT_FILE = "equatorial-credentials.json"
-ID_FOLDER_EQUATORIAL = "1TX79sj4OvbZJIDNSZtHbxxIRwuSG074t"
-
-credentials = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
-
-drive_service = build('drive', 'v3', credentials=credentials)
 
 
 def get_infos(req: RequestSchema, return_msg: bool, receiver, message):
@@ -112,8 +100,7 @@ def get_infos(req: RequestSchema, return_msg: bool, receiver, message):
                 if 'CONSUMO FATURADO(kWh) MÊS/ANO' in item:
                     media = text.split('\n')[idx + 1]
 
-            link_download_file = upload_file(f'{req.codigo_auxiliar}_{req.uc}_{conta_mes}.pdf', file_name,
-                                             ID_FOLDER_EQUATORIAL)
+            # producer_upload(create_upload_obj(file_name))
 
             boleto_info = Dados(
                 tipo_fornecimento=tipo_fornecimento,
@@ -124,8 +111,7 @@ def get_infos(req: RequestSchema, return_msg: bool, receiver, message):
                 saldo=saldo,
                 qtd_energia_ativa_fornecida=qtd_energia_ativa_fornecida,
                 qtd_energia_injetada=qtd_energia_injetada,
-                media=media,
-                url_fatura=link_download_file
+                media=media
             )
 
             result = ResponseSchema(
@@ -135,7 +121,7 @@ def get_infos(req: RequestSchema, return_msg: bool, receiver, message):
                 data=boleto_info
             ).model_dump_json()
 
-            producer(result)
+            producer_result(result)
             pdf.close()
             os.remove(file_name)
 
@@ -145,35 +131,10 @@ def get_infos(req: RequestSchema, return_msg: bool, receiver, message):
         logging.error(str(e))
         msg = 'Erro ao recuperar informações do boleto.'
         if return_msg:
-            producer(create_result_obj(
+            producer_result(create_result_obj(
                 req.correlation_id,
                 '106',
                 msg,
                 str(e)))
             receiver.complete_message(message)
         return False
-
-
-def upload_file(file_name, file_path, id_folder):
-    url_download_file = 'https://drive.usercontent.google.com/u/0/uc?id={id_file}&export=download'
-    try:
-        file_metadata = {
-            'name': file_name,
-            'parents': [id_folder]
-        }
-
-        media = MediaFileUpload(file_path, mimetype='application/pdf')
-        file = (
-            drive_service.files().create(
-                body=file_metadata,
-                media_body=media,
-                fields='id')
-            .execute()
-        )
-
-        print('Arquivo enviado com sucesso. ID: %s' % file.get('id'))
-
-        return url_download_file.format(id_file=file.get('id'))
-
-    except HttpError as error:
-        print(f"Ocorreu um erro ao fazer upload do arquivo: {error}")

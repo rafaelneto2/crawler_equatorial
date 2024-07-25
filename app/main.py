@@ -6,7 +6,7 @@ import time
 from azure.servicebus import ServiceBusClient
 from dotenv import load_dotenv
 
-from event.producer import producer, create_result_obj
+from event.producer import producer_result, create_result_obj
 from squema.schema import RequestSchema
 from useCase.fileUseCase import get_infos
 from useCase.scrapyUseCase import download_boleto, verify_path_and_files
@@ -33,7 +33,7 @@ def main():
                 try:
                     req = RequestSchema.parse_raw(str(msg))
                 except Exception as e:
-                    producer(create_result_obj(
+                    producer_result(create_result_obj(
                         None,
                         '107',
                         'Erro ao traduzir mensagem.',
@@ -43,7 +43,7 @@ def main():
 
                 verify_path_and_files()
                 if download_boleto(req, receiver, msg, return_msg) and get_infos(req, return_msg, receiver, msg):
-                # if get_infos(req, return_msg):
+                # if get_infos(req, return_msg, receiver, msg):
                     receiver.complete_message(msg)
 
 

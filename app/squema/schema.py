@@ -22,6 +22,11 @@ class ErrorDetails(BaseModel):
     detail: str | None
 
 
+class UploadSchema(BaseModel):
+    correlation_id: str
+    file: str
+
+
 class Dados(BaseModel):
     tipo_fornecimento: str
     conta_mes: str
@@ -32,7 +37,6 @@ class Dados(BaseModel):
     qtd_energia_ativa_fornecida: BaseEnergia | None
     qtd_energia_injetada: list[BaseEnergia] | None
     media: str | None
-    url_fatura: str | None
 
 
 class ResponseSchema(BaseModel):
