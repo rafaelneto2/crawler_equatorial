@@ -1,6 +1,5 @@
 import logging
 import os
-import threading
 import time
 
 from azure.servicebus import ServiceBusClient
@@ -28,7 +27,7 @@ def main():
         with receiver:
             for msg in receiver:
                 print("Mensagem recebida: " + str(msg))
-                return_msg = True if msg.delivery_count >= 4 else False
+                return_msg = True if msg.delivery_count >= 9 else False
 
                 try:
                     req = RequestSchema.parse_raw(str(msg))
@@ -50,7 +49,6 @@ def main():
 while True:
     time.sleep(1)
     try:
-        print(f'----- Threads ativas: {threading.active_count()} -----')
         main()
     except Exception as e:
         logging.error(str(e))

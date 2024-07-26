@@ -148,6 +148,13 @@ def select_options(driver, req, return_msg, receiver, message):
         time.sleep(5)
         driver.get('https://goias.equatorialenergia.com.br/AgenciaGO/Servi%C3%A7os/aberto/SegundaVia.aspx')
         time.sleep(3)
+
+        try:
+            driver.find_element(by=By.CLASS_NAME, value='close').click()
+            time.sleep(3)
+        except:
+            pass
+
         driver.find_element(by=By.XPATH, value='//*[@id="CONTENT_cbTipoEmissao"]/option[2]').click()
         driver.find_element(by=By.XPATH, value='//*[@id="CONTENT_cbMotivo"]/option[7]').click()
         driver.find_element(by=By.ID, value='CONTENT_btEnviar').click()
