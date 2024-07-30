@@ -10,6 +10,7 @@ google-auth
 
 azure-servicebus
 azure-identity
+azure-storage-blob
 aiohttp
 python-dotenv
 blinker==1.7.0

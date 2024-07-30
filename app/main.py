@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from event.producer import producer_result, create_result_obj
 from squema.schema import RequestSchema
 from useCase.fileUseCase import get_infos
-from useCase.scrapyUseCase import download_boleto, verify_path_and_files
+from useCase.scrapyUseCase import verify_path_and_files, download_boleto
 
 load_dotenv()
 

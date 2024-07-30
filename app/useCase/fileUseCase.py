@@ -3,10 +3,35 @@ import os
 from os import listdir
 from os.path import isfile, join
 
+from azure.storage.blob import BlobServiceClient
 from pypdf import PdfReader
 
-from event.producer import producer_result, create_result_obj
+from event.producer import producer_result, create_result_obj, create_upload_obj, producer_upload
 from squema.schema import RequestSchema, ResponseSchema, BaseEnergia, Dados
+
+
+def upload_pdf(file_path, correlation_id, uc, conta_mes):
+    connect_str = os.getenv('CONNECTION_STR_BLOB')
+    container_name = os.getenv('CONTAINER_NAME_BLOB')
+
+    blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+
+    container_client = blob_service_client.get_container_client(container_name)
+    try:
+        container_client.create_container()
+    except Exception as e:
+        print(f"Container já existe: {e}")
+
+    blob_name = f"{uc}_{conta_mes.replace('/', '-')}.pdf"
+
+    blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_name)
+
+    with open(file_path, "rb") as data:
+        blob_client.upload_blob(data)
+
+    print(f"Arquivo {file_path} carregado com sucesso para o container {container_name} com o nome {blob_name}.")
+
+    producer_upload(create_upload_obj(correlation_id, blob_name))
 
 
 def get_infos(req: RequestSchema, return_msg: bool, receiver, message):
@@ -100,7 +125,7 @@ def get_infos(req: RequestSchema, return_msg: bool, receiver, message):
                 if 'CONSUMO FATURADO(kWh) MÊS/ANO' in item:
                     media = text.split('\n')[idx + 1]
 
-            # producer_upload(create_upload_obj(file_name))
+            upload_pdf(file_name, req.correlation_id, req.uc, conta_mes)
 
             boleto_info = Dados(
                 tipo_fornecimento=tipo_fornecimento,

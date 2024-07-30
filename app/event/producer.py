@@ -1,10 +1,7 @@
-import base64
 import os
-import uuid
 
 from azure.servicebus import ServiceBusClient, ServiceBusMessage
 from dotenv import load_dotenv
-from pypdf import PdfWriter
 
 from squema.schema import ResponseSchema, ErrorDetails, UploadSchema
 
@@ -40,11 +37,12 @@ def producer_upload(msg: str):
 
 
 def create_upload_obj(
+        correlation_id: str,
         file_path: str
 ):
     return UploadSchema(
-        correlation_id=str(uuid.uuid4()),
-        file=encode_file_to_base64(file_path)
+        correlation_id=correlation_id,
+        file=file_path
     ).model_dump_json()
 
 
@@ -65,18 +63,3 @@ def create_result_obj(
         error=error,
         data=None
     ).model_dump_json()
-
-
-def encode_file_to_base64(file_path):
-    writer = PdfWriter(clone_from=file_path)
-
-    for page in writer.pages:
-        page.compress_content_streams()
-
-    with open(file_path, "wb") as f:
-        writer.write(f)
-
-    with open(file_path, "rb") as file:
-        encoded_string = base64.b64encode(file.read())
-
-    return encoded_string
