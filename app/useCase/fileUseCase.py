@@ -22,7 +22,7 @@ def upload_pdf(file_path, correlation_id, uc, conta_mes):
     except Exception as e:
         print(f"Container já existe: {e}")
 
-    blob_name = f"{uc}_{conta_mes.replace('/', '-')}.pdf"
+    blob_name = f"FATURA_EQUATORIAL_{uc}_{conta_mes.replace('/', '_')}.pdf"
 
     blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_name)
 
