@@ -6,6 +6,7 @@ from os.path import isfile, join
 
 from azure.servicebus import ServiceBusReceiver
 from selenium.webdriver.common.by import By
+# from selenium import webdriver
 from seleniumwire import webdriver
 
 from event.producer import producer_result, create_result_obj
@@ -45,6 +46,7 @@ def download_boleto(req: RequestSchema, receiver: ServiceBusReceiver, message, r
 
         driver = webdriver.Chrome(seleniumwire_options=seleniumwire_options, options=op)
         # driver = webdriver.Chrome(options=op)
+        # driver = uc.Chrome(options=op)
 
         driver.get('https://equatorialgoias.com.br/LoginGO.aspx')
     except Exception as e:
@@ -122,9 +124,10 @@ def download_boleto(req: RequestSchema, receiver: ServiceBusReceiver, message, r
             driver.find_element(by=By.ID, value='CONTENT_btnModal').click()
             time.sleep(3)
         else:
-            msg = 'Não há boleto disponível para download.'
-            producer_result(create_result_obj(req.correlation_id, '103', msg))
-            receiver.complete_message(message)
+            if return_msg:
+                msg = 'Não há boleto disponível para download.'
+                producer_result(create_result_obj(req.correlation_id, '103', msg))
+                receiver.complete_message(message)
             return False
 
     except Exception as e:
