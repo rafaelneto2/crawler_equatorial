@@ -25,6 +25,7 @@ class ErrorDetails(BaseModel):
 class UploadSchema(BaseModel):
     correlation_id: str
     file: str
+    conta_mes: str
 
 
 class Dados(BaseModel):

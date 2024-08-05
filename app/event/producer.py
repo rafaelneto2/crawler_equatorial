@@ -38,11 +38,13 @@ def producer_upload(msg: str):
 
 def create_upload_obj(
         correlation_id: str,
-        file_path: str
+        file_path: str,
+        conta_mes: str
 ):
     return UploadSchema(
         correlation_id=correlation_id,
-        file=file_path
+        file=file_path,
+        conta_mes=conta_mes
     ).model_dump_json()
 
 

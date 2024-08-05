@@ -13,6 +13,9 @@ from event.producer import producer_result, create_result_obj
 from squema.schema import RequestSchema
 
 
+# import undetected_chromedriver as uc
+
+
 def download_boleto(req: RequestSchema, receiver: ServiceBusReceiver, message, return_msg: bool):
     try:
         absolute_path = os.path.abspath("main.py").replace("main.py", "temp")
@@ -28,6 +31,7 @@ def download_boleto(req: RequestSchema, receiver: ServiceBusReceiver, message, r
         }
 
         op = webdriver.ChromeOptions()
+        # op = uc.ChromeOptions()
         user_agent = 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.5735.90 Mobile Safari/537.36'
         op.add_argument("--no-sandbox")
         op.add_argument("--headless=new")
@@ -46,7 +50,10 @@ def download_boleto(req: RequestSchema, receiver: ServiceBusReceiver, message, r
 
         driver = webdriver.Chrome(seleniumwire_options=seleniumwire_options, options=op)
         # driver = webdriver.Chrome(options=op)
-        # driver = uc.Chrome(options=op)
+
+        # driver = uc.Chrome(
+        #     options=op
+        # )
 
         driver.get('https://equatorialgoias.com.br/LoginGO.aspx')
     except Exception as e:

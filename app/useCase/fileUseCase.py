@@ -25,7 +25,7 @@ def upload_pdf(file_path, correlation_id, uc, conta_mes):
 
     print(f"Arquivo {file_path} carregado com sucesso para o container {container_name} com o nome {blob_name}.")
 
-    producer_upload(create_upload_obj(correlation_id, blob_name))
+    producer_upload(create_upload_obj(correlation_id, blob_name, conta_mes))
 
 
 def get_infos(req: RequestSchema, return_msg: bool, receiver, message):
