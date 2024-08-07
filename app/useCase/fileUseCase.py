@@ -11,19 +11,21 @@ from squema.schema import RequestSchema, ResponseSchema, BaseEnergia, Dados
 
 
 def upload_pdf(file_path, correlation_id, uc, conta_mes):
-    connect_str = os.getenv('CONNECTION_STR_BLOB')
-    container_name = os.getenv('CONTAINER_NAME_BLOB')
-
-    blob_service_client = BlobServiceClient.from_connection_string(connect_str)
-
     blob_name = f"FATURA_EQUATORIAL_{uc}_{conta_mes.replace('/', '_')}.pdf"
+    try:
+        connect_str = os.getenv('CONNECTION_STR_BLOB')
+        container_name = os.getenv('CONTAINER_NAME_BLOB')
 
-    blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_name)
+        blob_service_client = BlobServiceClient.from_connection_string(connect_str)
 
-    with open(file_path, "rb") as data:
-        blob_client.upload_blob(data)
+        blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_name)
 
-    print(f"Arquivo {file_path} carregado com sucesso para o container {container_name} com o nome {blob_name}.")
+        with open(file_path, "rb") as data:
+            blob_client.upload_blob(data)
+
+        print(f"Arquivo {file_path} carregado com sucesso para o container {container_name} com o nome {blob_name}.")
+    except:
+        pass
 
     producer_upload(create_upload_obj(correlation_id, blob_name, conta_mes))
 

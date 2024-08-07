@@ -1,5 +1,6 @@
 import logging
 import os
+import random
 import time
 from os import listdir
 from os.path import isfile, join
@@ -11,9 +12,6 @@ from seleniumwire import webdriver
 
 from event.producer import producer_result, create_result_obj
 from squema.schema import RequestSchema
-
-
-# import undetected_chromedriver as uc
 
 
 def download_boleto(req: RequestSchema, receiver: ServiceBusReceiver, message, return_msg: bool):
@@ -32,7 +30,7 @@ def download_boleto(req: RequestSchema, receiver: ServiceBusReceiver, message, r
 
         op = webdriver.ChromeOptions()
         # op = uc.ChromeOptions()
-        user_agent = 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.5735.90 Mobile Safari/537.36'
+        user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36'
         op.add_argument("--no-sandbox")
         op.add_argument("--headless=new")
         op.add_argument("--disable-gpu")
@@ -52,7 +50,7 @@ def download_boleto(req: RequestSchema, receiver: ServiceBusReceiver, message, r
         # driver = webdriver.Chrome(options=op)
 
         # driver = uc.Chrome(
-        #     options=op
+        #     options=op, seleniumwire_options=seleniumwire_options
         # )
 
         driver.get('https://equatorialgoias.com.br/LoginGO.aspx')
@@ -71,8 +69,11 @@ def download_boleto(req: RequestSchema, receiver: ServiceBusReceiver, message, r
     time.sleep(3)
 
     try:
-        driver.find_element(by=By.ID, value='WEBDOOR_headercorporativogo_txtUC').send_keys(req.uc)
-        driver.find_element(by=By.ID, value='WEBDOOR_headercorporativogo_txtDocumento').send_keys(req.documento)
+        time.sleep(random.randint(2, 10))
+        digitar_lentamente(driver.find_element(by=By.ID, value='WEBDOOR_headercorporativogo_txtUC'), req.uc)
+        time.sleep(random.randint(2, 10))
+        digitar_lentamente(driver.find_element(by=By.ID, value='WEBDOOR_headercorporativogo_txtDocumento'), req.documento)
+        time.sleep(random.randint(2, 10))
         driver.find_element(by=By.XPATH, value='//*[@id="WEBDOOR_headercorporativogo_divLogin"]/div[2]/button').click()
         time.sleep(3)
     except Exception as e:
@@ -190,3 +191,9 @@ def verify_path_and_files():
         print("Directory already exists!")
     for file in [f for f in listdir('temp') if isfile(join('temp', f))]:
         os.remove(f'temp/{file}')
+
+
+def digitar_lentamente(elemento, texto):
+    for caractere in texto:
+        elemento.send_keys(caractere)
+        time.sleep(random.randint(1, 3))
