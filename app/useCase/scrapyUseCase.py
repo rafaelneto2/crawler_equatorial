@@ -17,8 +17,8 @@ from squema.schema import RequestSchema
 def download_boleto(req: RequestSchema, receiver: ServiceBusReceiver, message, return_msg: bool):
     try:
         absolute_path = os.path.abspath("main.py").replace("main.py", "temp")
-        username = "sh1al1yp0ekpzwb-country-br-state-goias"
-        password = "ee6qa47ecjbtw7r"
+        username = "hy1zz0azv0regqx-country-br-state-goias"
+        password = "fulcfr23i0jjhn8"
         proxy = "rp.proxyscrape.com:6060"
         proxy_url = f'https://{username}:{password}@{proxy}'
         seleniumwire_options = {
