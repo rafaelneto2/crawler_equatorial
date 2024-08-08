@@ -6,12 +6,17 @@ from os import listdir
 from os.path import isfile, join
 
 from azure.servicebus import ServiceBusReceiver
+from selenium import webdriver
 from selenium.webdriver.common.by import By
-# from selenium import webdriver
 from seleniumwire import webdriver
 
 from event.producer import producer_result, create_result_obj
 from squema.schema import RequestSchema
+
+
+# import seleniumwire.undetected_chromedriver.v2 as uc
+# from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+# from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 
 def download_boleto(req: RequestSchema, receiver: ServiceBusReceiver, message, return_msg: bool):
@@ -34,13 +39,16 @@ def download_boleto(req: RequestSchema, receiver: ServiceBusReceiver, message, r
         op.add_argument("--no-sandbox")
         op.add_argument("--headless=new")
         op.add_argument("--disable-gpu")
-        op.add_argument("--disable-infobars")
+        # op.add_argument("--disable-infobars")
         op.add_argument("--disable-dev-shm-usage")
+        # op.add_argument('--ignore-certificate-errors')
+        # op.add_argument('--allow-running-insecure-content')
         op.add_argument(f'user-agent={user_agent}')
         op.add_experimental_option("prefs", {
             "download.default_directory": absolute_path,
             "download.prompt_for_download": False,
             "download.directory_upgrade": True,
+            # "profile.default_content_setting_values.cookies": 2,
             "safebrowsing.enabled": True
         })
 
@@ -50,10 +58,21 @@ def download_boleto(req: RequestSchema, receiver: ServiceBusReceiver, message, r
         # driver = webdriver.Chrome(options=op)
 
         # driver = uc.Chrome(
-        #     options=op, seleniumwire_options=seleniumwire_options
+        #     options=op
         # )
 
-        driver.get('https://equatorialgoias.com.br/LoginGO.aspx')
+        # driver.get('https://www.equatorialenergia.com.br/')
+        driver.get('https://goias.equatorialenergia.com.br/LoginGO.aspx?envia-dados=Entrar')
+
+        # driver.find_element(by=By.XPATH, value='/html/body/section/div[2]/div/div/div/div/a[3]').click()
+
+        # driver.find_element(by=By.XPATH, value='//*[@id="login-box-form-nova-ap"]/button').click()
+
+        # abas = driver.window_handles
+
+        # driver.switch_to.window(abas[-1])
+
+        # time.sleep(200)
     except Exception as e:
         logging.error(str(e))
         if return_msg:
@@ -69,11 +88,12 @@ def download_boleto(req: RequestSchema, receiver: ServiceBusReceiver, message, r
     time.sleep(3)
 
     try:
-        time.sleep(random.randint(2, 10))
+        time.sleep(random.randint(2, 5))
         digitar_lentamente(driver.find_element(by=By.ID, value='WEBDOOR_headercorporativogo_txtUC'), req.uc)
-        time.sleep(random.randint(2, 10))
+        time.sleep(random.randint(2, 5))
         digitar_lentamente(driver.find_element(by=By.ID, value='WEBDOOR_headercorporativogo_txtDocumento'), req.documento)
-        time.sleep(random.randint(2, 10))
+        time.sleep(random.randint(2, 5))
+        # time.sleep(200)
         driver.find_element(by=By.XPATH, value='//*[@id="WEBDOOR_headercorporativogo_divLogin"]/div[2]/button').click()
         time.sleep(3)
     except Exception as e:
@@ -166,10 +186,13 @@ def select_options(driver, req, return_msg, receiver, message):
         except:
             pass
 
-        driver.find_element(by=By.XPATH, value='//*[@id="CONTENT_cbTipoEmissao"]/option[2]').click()
-        driver.find_element(by=By.XPATH, value='//*[@id="CONTENT_cbMotivo"]/option[7]').click()
-        driver.find_element(by=By.ID, value='CONTENT_btEnviar').click()
         time.sleep(3)
+        driver.find_element(by=By.XPATH, value='//*[@id="CONTENT_cbTipoEmissao"]/option[2]').click()
+        time.sleep(2)
+        driver.find_element(by=By.XPATH, value='//*[@id="CONTENT_cbMotivo"]/option[7]').click()
+        time.sleep(3)
+        driver.find_element(by=By.ID, value='CONTENT_btEnviar').click()
+        time.sleep(2)
     except Exception as e:
         driver.quit()
         logging.error(str(e))
@@ -196,4 +219,4 @@ def verify_path_and_files():
 def digitar_lentamente(elemento, texto):
     for caractere in texto:
         elemento.send_keys(caractere)
-        time.sleep(random.randint(1, 3))
+        time.sleep(1)

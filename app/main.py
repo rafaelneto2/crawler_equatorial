@@ -27,7 +27,7 @@ def main():
         with receiver:
             for msg in receiver:
                 print("Mensagem recebida: " + str(msg))
-                return_msg = True if msg.delivery_count >= 9 else False
+                return_msg = True if msg.delivery_count >= 19 else False
 
                 try:
                     req = RequestSchema.parse_raw(str(msg))
