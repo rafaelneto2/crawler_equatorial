@@ -6,8 +6,9 @@ from os.path import isfile, join
 from azure.storage.blob import BlobServiceClient
 from pypdf import PdfReader
 
-from event.producer import producer_result, create_result_obj, create_upload_obj, producer_upload
-from squema.schema import RequestSchema, ResponseSchema, BaseEnergia, Dados
+from event.producer import producer_result, create_result_obj, create_upload_obj, producer_upload, \
+    producer_result_get_info
+from squema.schema import ResponseSchema, BaseEnergia, Dados
 
 
 def upload_pdf(file_path, correlation_id, uc, conta_mes):
@@ -30,9 +31,9 @@ def upload_pdf(file_path, correlation_id, uc, conta_mes):
     producer_upload(create_upload_obj(correlation_id, blob_name, conta_mes))
 
 
-def get_infos(req: RequestSchema, return_msg: bool, receiver, message):
+def get_infos(req, receiver, message, dir, return_msg=True):
     try:
-        for file in [f for f in listdir("temp") if isfile(join("temp", f))]:
+        for file in [f for f in listdir(dir) if isfile(join(dir, f))]:
             qtd_energia_injetada = []
             qtd_energia_ativa_fornecida = None
             tipo_fornecimento = None
@@ -42,8 +43,9 @@ def get_infos(req: RequestSchema, return_msg: bool, receiver, message):
             credito_recebido = None
             saldo = None
             media = None
+            uc = None
 
-            file_name = f'temp/{file}'
+            file_name = f'{dir}/{file}'
 
             pdf = open(file_name, 'rb')
             reader = PdfReader(pdf)
@@ -62,6 +64,7 @@ def get_infos(req: RequestSchema, return_msg: bool, receiver, message):
                     total_a_pagar = total_a_pagar[1]
                     vencimento = item.split(' ')[1][:10]
                     conta_mes = text.split('\n')[idx + 1][0:8]
+                    uc = text.split('\n')[idx + 1][8:]
                     flag_valor = False
 
                 if 'CRÉDITO RECEBIDO KWH' in item:
@@ -121,9 +124,10 @@ def get_infos(req: RequestSchema, return_msg: bool, receiver, message):
                 if 'CONSUMO FATURADO(kWh) MÊS/ANO' in item:
                     media = text.split('\n')[idx + 1]
 
-            upload_pdf(file_name, req.correlation_id, req.uc, conta_mes)
+            upload_pdf(file_name, req.correlation_id, uc, conta_mes)
 
             boleto_info = Dados(
+                uc=uc,
                 tipo_fornecimento=tipo_fornecimento,
                 conta_mes=conta_mes,
                 vencimento=vencimento,
@@ -142,7 +146,11 @@ def get_infos(req: RequestSchema, return_msg: bool, receiver, message):
                 data=boleto_info
             ).model_dump_json()
 
-            producer_result(result)
+            if dir == 'temp':
+                producer_result(result)
+            else:
+                producer_result_get_info(result)
+
             pdf.close()
             os.remove(file_name)
 

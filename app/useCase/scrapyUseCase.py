@@ -14,11 +14,6 @@ from event.producer import producer_result, create_result_obj
 from squema.schema import RequestSchema
 
 
-# import seleniumwire.undetected_chromedriver.v2 as uc
-# from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-# from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-
-
 def download_boleto(req: RequestSchema, receiver: ServiceBusReceiver, message, return_msg: bool):
     try:
         absolute_path = os.path.abspath("main.py").replace("main.py", "temp")
@@ -206,14 +201,14 @@ def select_options(driver, req, return_msg, receiver, message):
         return False
 
 
-def verify_path_and_files():
-    if not os.path.exists('temp'):
-        os.makedirs('temp')
+def verify_path_and_files(dir):
+    if not os.path.exists(dir):
+        os.makedirs(dir)
         print("Directory created successfully!")
     else:
         print("Directory already exists!")
-    for file in [f for f in listdir('temp') if isfile(join('temp', f))]:
-        os.remove(f'temp/{file}')
+    for file in [f for f in listdir(dir) if isfile(join(dir, f))]:
+        os.remove(f'{dir}/{file}')
 
 
 def digitar_lentamente(elemento, texto):

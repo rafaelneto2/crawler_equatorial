@@ -9,6 +9,11 @@ class RequestSchema(BaseModel):
     codigo_auxiliar: str
 
 
+class GetInfoBoleto(BaseModel):
+    correlation_id: str
+    file_url: str
+
+
 class BaseEnergia(BaseModel):
     unidade: str | None
     quantidade: str | None
@@ -29,6 +34,7 @@ class UploadSchema(BaseModel):
 
 
 class Dados(BaseModel):
+    uc: str
     tipo_fornecimento: str
     conta_mes: str
     vencimento: str

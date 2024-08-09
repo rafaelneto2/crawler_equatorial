@@ -5,8 +5,6 @@ pypdf
 webdriver-manager
 chromedriver_binary
 selenium-wire
-google-api-python-client
-google-auth
 
 azure-servicebus
 azure-identity
@@ -14,4 +12,3 @@ azure-storage-blob
 aiohttp
 python-dotenv
 blinker==1.7.0
-undetected-chromedriver

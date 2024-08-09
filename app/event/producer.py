@@ -9,6 +9,7 @@ load_dotenv()
 
 conn_str = os.getenv('CONNECTION_STR')
 queue_producer_result = os.getenv('QUEUE_NAME_PRODUCER_RESULTS')
+queue_producer_result_get_info = os.getenv('QUEUE_NAME_PRODUCER_RESULTS_GET_INFO')
 queue_producer_upload = os.getenv('QUEUE_NAME_PRODUCER_UPLOAD')
 
 
@@ -23,6 +24,15 @@ def producer_result(msg: str):
             conn_str=conn_str,
             logging_enable=True) as servicebus_client:
         sender = servicebus_client.get_queue_sender(queue_name=queue_producer_result)
+        with sender:
+            send_single_message(sender, msg)
+
+
+def producer_result_get_info(msg: str):
+    with ServiceBusClient.from_connection_string(
+            conn_str=conn_str,
+            logging_enable=True) as servicebus_client:
+        sender = servicebus_client.get_queue_sender(queue_name=queue_producer_result_get_info)
         with sender:
             send_single_message(sender, msg)
 
