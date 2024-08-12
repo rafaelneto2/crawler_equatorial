@@ -101,11 +101,16 @@ def get_infos(req, receiver, message, dir, return_msg=True):
                     values = item.split(' ')
 
                     if values[3] == 'UC':
+                        if len(values) > 9:
+                            valor_energia_injetada = values[9]
+                        else:
+                            valor_energia_injetada = values[8]
+
                         base_energia_injetada = BaseEnergia(
                             unidade=values[5],
                             preco_unit_com_tributos=values[6],
                             quantidade=values[7],
-                            valor=values[9]
+                            valor=valor_energia_injetada
                         )
                     else:
                         if len(values) > 6:
