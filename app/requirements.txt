@@ -2,13 +2,8 @@ httpx
 selenium
 pydantic
 pypdf
-webdriver-manager
-chromedriver_binary
-selenium-wire
-
 azure-servicebus
 azure-identity
 azure-storage-blob
 aiohttp
 python-dotenv
-blinker==1.7.0

@@ -11,6 +11,16 @@ from event.producer import producer_result, create_result_obj, create_upload_obj
 from squema.schema import ResponseSchema, BaseEnergia, Dados
 
 
+def verify_path_and_files(dir):
+    if not os.path.exists(dir):
+        os.makedirs(dir)
+        print("Directory created successfully!")
+    else:
+        print("Directory already exists!")
+    for file in [f for f in listdir(dir) if isfile(join(dir, f))]:
+        os.remove(f'{dir}/{file}')
+
+
 def upload_pdf(file_path, correlation_id, uc, conta_mes):
     blob_name = f"FATURA_EQUATORIAL_{uc}_{conta_mes.replace('/', '_')}.pdf"
     try:
